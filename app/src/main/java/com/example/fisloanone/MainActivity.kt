@@ -13,6 +13,7 @@ class MainActivity : AppCompatActivity() {
         val btnLaunchLoan = findViewById<Button>(R.id.btnLaunchLoan)
         btnLaunchLoan.setOnClickListener {
             LoanLib.launchFirstScreen(this)
+
         }
     }
 }

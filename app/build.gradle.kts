@@ -1,3 +1,7 @@
+import com.android.build.api.dsl.LintOptions
+import com.android.tools.analytics.AnalyticsSettings.disable
+import java.lang.Compiler.disable
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -11,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.fisloanone"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -35,17 +39,25 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    buildFeatures {
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.4.3"
+    }
+
 }
 
 dependencies {
 
     implementation(project(":myfisloanlibone"))
-
-
-    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+
+    implementation("androidx.compose.runtime:runtime:1.6.8")
 }
