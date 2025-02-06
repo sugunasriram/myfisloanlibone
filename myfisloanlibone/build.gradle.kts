@@ -53,7 +53,7 @@ android {
     publishing {
         publications {
             create<MavenPublication>("maven") {
-                from(components["release"])
+//                from(components["release"])
                 groupId = "com.github.sugunasriram"
                 artifactId = "myfisloanlibone"
                 version = "v1.0.2"
