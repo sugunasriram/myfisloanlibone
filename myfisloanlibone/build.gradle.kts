@@ -56,7 +56,7 @@ android {
 //                from(components["release"])
                 groupId = "com.github.sugunasriram"
                 artifactId = "myfisloanlibone"
-                version = "1.0.5"
+                version = "1.0.6"
             }
         }
     }
