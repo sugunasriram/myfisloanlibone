@@ -1,7 +1,9 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("maven-publish")
 }
+
 
 android {
     namespace = "com.example.myfisloanlibone"
@@ -47,6 +49,18 @@ android {
         }
     }
 
+}
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("maven") {
+                from(components["release"])
+                groupId = "com.github.sugunasriram"
+                artifactId = "myfisloanlibone"
+                version = "1.0.0"
+            }
+        }
+    }
 }
 
 dependencies {
