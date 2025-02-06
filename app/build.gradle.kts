@@ -1,6 +1,5 @@
 import com.android.build.api.dsl.LintOptions
 import com.android.tools.analytics.AnalyticsSettings.disable
-import java.lang.Compiler.disable
 
 plugins {
     id("com.android.application")
