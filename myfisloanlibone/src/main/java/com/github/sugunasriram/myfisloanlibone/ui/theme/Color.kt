@@ -1,4 +1,4 @@
-package com.example.myfisloanlibone.ui.theme
+package com.github.sugunasriram.myfisloanlibone.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

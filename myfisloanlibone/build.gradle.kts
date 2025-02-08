@@ -6,7 +6,7 @@ plugins {
 
 
 android {
-    namespace = "com.example.myfisloanlibone"
+    namespace = "com.github.sugunasriram.myfisloanlibone"
     compileSdk = 34
 
     defaultConfig {
@@ -56,7 +56,7 @@ android {
 //                from(components["release"])
                 groupId = "com.github.sugunasriram"
                 artifactId = "myfisloanlibone"
-                version = "1.0.6"
+                version = "1.0.7"
             }
         }
     }

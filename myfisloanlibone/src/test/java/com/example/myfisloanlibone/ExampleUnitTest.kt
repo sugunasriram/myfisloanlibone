@@ -1,4 +1,4 @@
-package com.example.myfisloanlibone
+package com.github.sugunasriram.myfisloanlibone
 
 import org.junit.Test
 
