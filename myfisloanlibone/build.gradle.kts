@@ -50,16 +50,18 @@ android {
     }
 
 }
-    publishing {
-        publications {
-            create<MavenPublication>("maven") {
-//                from(components["release"])
-                groupId = "com.github.sugunasriram"
-                artifactId = "myfisloanlibone"
-                version = "1.0.7"
-            }
-        }
-    }
+  afterEvaluate {
+      publishing {
+          publications {
+              create<MavenPublication>("maven") {
+                from(components["release"])
+                  groupId = "com.github.sugunasriram"
+                  artifactId = "myfisloanlibone"
+                  version = "1.0.8"
+              }
+          }
+      }
+  }
 
 dependencies {
 
