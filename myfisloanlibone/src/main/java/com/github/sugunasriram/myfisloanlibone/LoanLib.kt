@@ -1,7 +1,11 @@
 package com.github.sugunasriram.myfisloanlibone
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.view.Gravity
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.Toast
 
 import androidx.compose.foundation.Image
@@ -9,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,4 +79,54 @@ object LoanLib {
             )
         }
     }
+
+    fun DisplayImageAndTwoButtons(context: Context) {
+        val layout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(android.graphics.Color.WHITE)
+        }
+
+        val imageView = ImageView(context).apply {
+            setImageResource(R.drawable.google_image)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        }
+
+        val buttonLayout = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val backButton = android.widget.Button(context).apply {
+            text = "Back"
+            setOnClickListener {
+                // Handle Back action
+            }
+        }
+
+        val forwardButton = android.widget.Button(context).apply {
+            text = "Forward"
+            setOnClickListener {
+                // Handle Forward action
+            }
+        }
+
+        buttonLayout.addView(backButton)
+        buttonLayout.addView(forwardButton)
+
+        layout.addView(imageView)
+        layout.addView(buttonLayout)
+
+        val activity = context as Activity
+        activity.setContentView(layout)
+    }
+
 }

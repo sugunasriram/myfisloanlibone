@@ -39,7 +39,12 @@ class MainActivity : ComponentActivity() {
 //
 //                }
 //            }
-            LoanLib.ImagePreview()
+
+            //2. Only Image
+            //LoanLib.ImagePreview()
+            //3. Image with 2 buttons
+//            LoanLib.DisplayImageAndTwoButtons()
         }
+        LoanLib.DisplayImageAndTwoButtons(context = this)
     }
 }
