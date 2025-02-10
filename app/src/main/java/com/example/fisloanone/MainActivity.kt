@@ -33,7 +33,7 @@ import com.github.sugunasriram.myfisloanlibone.LoanLib
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
+//        setContent {
 //            AndroidLibraryTheme {
 //                Box(modifier = Modifier.fillMaxSize()) {
 //
@@ -42,9 +42,11 @@ class MainActivity : ComponentActivity() {
 
             //2. Only Image
             //LoanLib.ImagePreview()
-            //3. Image with 2 buttons
-//            LoanLib.DisplayImageAndTwoButtons()
-        }
-        LoanLib.DisplayImageAndTwoButtons(context = this)
+
+//        }
+        //3. Image with 2 buttons - Working
+        //LoanLib.DisplayImageAndTwoButtons(context = this)
+
+        LoanLib.LaunchThirdScreen(context = this)
     }
 }

@@ -36,6 +36,7 @@ object LoanLib {
         val intent = Intent(context, FirstScreenActivity::class.java)
         context.startActivity(intent)
     }
+
     @Composable
     fun ImagePreview(
         image: Painter = painterResource(id = R.drawable.image1),
@@ -128,5 +129,13 @@ object LoanLib {
         val activity = context as Activity
         activity.setContentView(layout)
     }
+
+    fun LaunchThirdScreen(context: Context) {
+        Toast.makeText(context, "Launching Third Screen", Toast.LENGTH_SHORT).show()
+
+        val intent = Intent(context, ThirdScreenActivity::class.java)
+        context.startActivity(intent)
+    }
+
 
 }
