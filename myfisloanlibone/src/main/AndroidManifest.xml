@@ -20,6 +20,8 @@
         <activity android:name=".FirstScreenActivity" android:exported="true"/>
         <activity android:name=".SecondScreenActivity" android:exported="true"/>
         <activity android:name=".ThirdScreenActivity" android:exported="true"/>
+        <activity android:name="com.github.sugunasriram.myfisloanlibone.fis_code.app.MainActivity"
+            android:exported="true"/>
     </application>
 
 </manifest>

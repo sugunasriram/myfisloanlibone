@@ -47,6 +47,7 @@ class MainActivity : ComponentActivity() {
         //3. Image with 2 buttons - Working
         //LoanLib.DisplayImageAndTwoButtons(context = this)
 
-        LoanLib.LaunchThirdScreen(context = this)
+        //LoanLib.LaunchThirdScreen(context = this)
+        LoanLib.LaunchFISApp(context = this)
     }
 }
