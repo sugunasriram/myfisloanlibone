@@ -200,7 +200,6 @@ object LoanLib {
     }
 
 
-    const val REQUEST_CODE = 2001
     data class LoanDetails(
         val loanAmount: Double,
         val interestRate: Double,
@@ -223,6 +222,7 @@ object LoanLib {
 
         LoanLib.callback = callback
 
-        (context as Activity).startActivityForResult(intent, 2001)
+        //(context as Activity).startActivityForResult(intent, 2001)
+        context.startActivity(intent)
     }
 }
