@@ -34,6 +34,8 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.utils.storage.TokenManag
 import java.io.Serializable
 
 object LoanLib {
+    var callback: ((LoanDetails) -> Unit)? = null
+
     fun launchFirstScreen(context: Context) {
         Toast.makeText(context, "Launching First Screen", Toast.LENGTH_SHORT).show()
 
@@ -197,4 +199,30 @@ object LoanLib {
         context.startActivity(intent)
     }
 
+
+    const val REQUEST_CODE = 2001
+    data class LoanDetails(
+        val loanAmount: Double,
+        val interestRate: Double,
+        val tenure: Int
+    ) : Serializable
+    fun LaunchFISAppWithParamsAndCallback(
+        context: Context,
+        personalDetails: PersonalDetails,
+        productDetails: ProductDetails,
+        callback: (LoanDetails) -> Unit
+    ) {
+        Toast.makeText(context, "Launching FIS with Params", Toast.LENGTH_SHORT).show()
+
+        // Initialize the library
+        init(context)
+
+        val intent = Intent(context, MainActivity::class.java)
+        intent.putExtra("personalDetails", personalDetails)
+        intent.putExtra("productDetails", productDetails)
+
+        LoanLib.callback = callback
+
+        (context as Activity).startActivityForResult(intent, 2001)
+    }
 }

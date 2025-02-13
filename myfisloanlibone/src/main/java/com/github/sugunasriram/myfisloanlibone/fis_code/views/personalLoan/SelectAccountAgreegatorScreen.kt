@@ -1,6 +1,8 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -8,7 +10,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
+import com.github.sugunasriram.myfisloanlibone.LoanLib
+import com.github.sugunasriram.myfisloanlibone.MainActivity
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.FixedTopBottomScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.SpaceTextWithRadio
@@ -70,6 +75,7 @@ fun onButtonClicked(
     context: Context
 ) {
     if (selectedOption != null) {
+
         navigateToWebViewFlowOneScreen(navController, purpose, fromFlow)
     } else {
         CommonMethods().toastMessage(

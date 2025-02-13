@@ -76,12 +76,23 @@ class MainActivity : ComponentActivity() {
 
         //LoanLib.LaunchThirdScreen(context = this)
 
-        PopulatePersonalDetails()
+        //1.0.13
+//        LoanLib.LaunchFISAppWithParams(
+//            context = this,
+//            personalDetails = PopulatePersonalDetails(),
+//            productDetails = PopulateProductDetails())
 
-        LoanLib.LaunchFISAppWithParams(
+
+        LoanLib.LaunchFISAppWithParamsAndCallback(
             context = this,
             personalDetails = PopulatePersonalDetails(),
-            productDetails = PopulateProductDetails())
+            productDetails = PopulateProductDetails()
+        ) { loanDetails ->
+            // Handle the callback with loanDetails
+            println("Loan Amount: ${loanDetails.loanAmount}")
+            println("Interest Rate: ${loanDetails.interestRate}")
+            println("Tenure: ${loanDetails.tenure}")
+        }
     }
 
 

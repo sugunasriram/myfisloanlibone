@@ -1,6 +1,7 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.app
 
 import FsTheme
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -20,6 +21,7 @@ import android.webkit.PermissionRequest
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.navigation.compose.rememberNavController
+import com.github.sugunasriram.myfisloanlibone.LoanLib
 import com.github.sugunasriram.myfisloanlibone.LoanLib.PersonalDetails
 import com.github.sugunasriram.myfisloanlibone.LoanLib.ProductDetails
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.AppScreens
@@ -178,5 +180,8 @@ class MainActivity : ComponentActivity() {
     }
     companion object {
         var webPermissionRequest: PermissionRequest? = null
+        var callback: ((LoanLib.LoanDetails) -> Unit)? = null
+
     }
+
 }

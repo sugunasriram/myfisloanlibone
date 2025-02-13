@@ -1,5 +1,7 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.views
 
+import android.app.Activity
+import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
@@ -20,8 +22,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.github.sugunasriram.myfisloanlibone.LoanLib
+import com.github.sugunasriram.myfisloanlibone.MainActivity
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.FixedTopBottomScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.NumberFullWidthBorderCard
