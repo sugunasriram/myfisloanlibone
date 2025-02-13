@@ -48,9 +48,9 @@ class ApiPaths {
 
     // Server side Events Api Paths
     //Prod
-    val sse = "https://ondcfs.jtechnoparks.in/jt-bap/api/v1/sse"
+    //val sse = "https://ondcfs.jtechnoparks.in/jt-bap/api/v1/sse"
     //Preprod
-//    val sse = "https://stagingondcfs.jtechnoparks.in/jt-bap/api/v1/sse"
+    val sse = "https://stagingondcfs.jtechnoparks.in/jt-bap/api/v1/sse"
 //    val sse = "https://stagingondcfs.jtechnoparks.in/staging-jt-bap/api/v1/sse"
 
     // ONDC Flow Api paths

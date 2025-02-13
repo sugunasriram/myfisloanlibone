@@ -27,11 +27,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.github.sugunasriram.myfisloanlibone.fis_code.FsApp
 
 import com.github.sugunasriram.myfisloanlibone.fis_code.app.MainActivity
 import com.github.sugunasriram.myfisloanlibone.fis_code.dataStore
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.storage.TokenManager
+import java.io.Serializable
 
 object LoanLib {
     fun launchFirstScreen(context: Context) {
@@ -156,5 +156,45 @@ object LoanLib {
         }
     }
 
+    data class PersonalDetails(
+        val name: String="",
+        val dob: String="",
+        val personalEmailId: String="",
+        val officialEmailId: String="",
+        val gender: String="",
+        val address1: String="",
+        val pincode1: String="",
+        val address2: String="",
+        val pincode2: String=""
+    ) :Serializable
+
+    data class ProductDetails(
+        val productCategory: String="",
+        val productSKUID: String="",
+        val productBrand: String="",
+        val productPrice: Double=0.0,
+        val downpayment: Double=0.0,
+        val merchantPan: String="",
+        val merchantGst: String="",
+        val merchantBankAccountNumber: String="",
+        val merchantIfscCode: String="",
+        val merchantBankAccountHolderName: String=""
+    ) :Serializable
+    fun LaunchFISAppWithParams (
+        context: Context,
+        personalDetails: PersonalDetails,
+        productDetails: ProductDetails
+    ) {
+        Toast.makeText(context, "Launching FIS with Params", Toast.LENGTH_SHORT).show()
+
+        // Initialize the library
+        init(context)
+
+        val intent = Intent(context, MainActivity::class.java)
+        intent.putExtra("personalDetails", personalDetails)
+        intent.putExtra("productDetails", productDetails)
+
+        context.startActivity(intent)
+    }
 
 }

@@ -23,9 +23,9 @@ import io.ktor.http.takeFrom
 
 open class KtorClient {
     //Prod
-   private val baseUrl = Url("https://ondcfs.jtechnoparks.in/jt-bap${ApiPaths().baseUrl}")
+   //private val baseUrl = Url("https://ondcfs.jtechnoparks.in/jt-bap${ApiPaths().baseUrl}")
     //Preprod
-   //private val baseUrl = Url("https://stagingondcfs.jtechnoparks.in/jt-bap${ApiPaths().baseUrl}")
+   private val baseUrl = Url("https://stagingondcfs.jtechnoparks.in/jt-bap${ApiPaths().baseUrl}")
     //Staging
 //   private val baseUrl = Url("https://stagingondcfs.jtechnoparks.in/staging-jt-bap${ApiPaths().baseUrl}")
 

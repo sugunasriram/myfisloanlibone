@@ -27,6 +27,7 @@ sealed class AppScreens(var route: String) {
     object LoanProcessScreen : AppScreens("loan_process_screen")
     object AnnualIncomeScreen : AppScreens("annual_income_screen")
     object ReviewDetailsScreen : AppScreens("review_detail_screen")
+    object ReviewDetailsScreenForPF : AppScreens("review_detail_screen_for_pf")
     object BankKycVerificationScreen : AppScreens("bank_kyc_verification_screen")
     object LoanDisbursementScreen : AppScreens("loan_disbursement_screen")
     object AccountDetailsScreen : AppScreens("account_details_screen")

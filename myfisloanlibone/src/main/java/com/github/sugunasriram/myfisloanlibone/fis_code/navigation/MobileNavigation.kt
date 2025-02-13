@@ -5,6 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.github.sugunasriram.myfisloanlibone.LoanLib
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.AnimationLoader
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.KycAnimation
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.ApplyByCategoryScreen
@@ -52,6 +53,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.Perso
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.PrePaymentStatusScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.RepaymentScheduleScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.ReviewDetailsScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.ReviewDetailsScreenForPF
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.SelectAccountAgreegatorScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.SelectBankScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.sidemenu.LoanListScreen
@@ -179,6 +181,15 @@ fun NavGraphBuilder.mobileNavigation(
                 )
             }
         }
+
+        //Sugu
+        composable("${AppScreens.ReviewDetailsScreenForPF.route}/{personalDetails}/{productDetails}") {
+            backStack ->
+                ReviewDetailsScreenForPF(
+                    navController = navController,
+                    purpose = "travel", fromFlow = "Purchase Loan"
+                )
+            }
 
         composable("${AppScreens.SearchWebViewScreen.route}/{purpose}/{fromFlow}") { backStack ->
             val purpose = backStack.arguments?.getString("purpose")
