@@ -1,12 +1,14 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class LogIn(
-	val data: Token? = null,
-	val status: Boolean? = null,
-	val statusCode: Int? = null
+	val orderId: String? = null,
+	val message:String? = null
+//	val status: Boolean? = null,
+//	val statusCode: Int? = null
 )
 
 @Serializable
@@ -17,3 +19,25 @@ data class Token(
 	val sseId: String? = null
 )
 
+@Serializable
+data class LoginDetails(
+	val orderId: String? = null,
+	val otp: String? = null,
+	val deviceInfo: DeviceInfo? = null, //PreProd
+
+	)
+
+@Serializable
+data class DeviceInfo(
+	val brand: String,
+	val deviceName: String,
+	val deviceType: String,
+	val isDevice: String,
+	val manufacturer: String,
+	val modelId: String,
+	val modelName: String,
+	val osName: String,
+	val androidId: String,
+	val osVersion: String,
+	val platformApiLevel: String
+)

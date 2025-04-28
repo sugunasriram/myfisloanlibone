@@ -51,8 +51,8 @@ fun navigateToOtpScreen(
     }
 }
 
-fun navigateToOtpVerifyScreen(navController: NavHostController, closeCurrent: Boolean = true) {
-    navController.navigate(AppScreens.OtpVerifyScreen.route) {
+fun navigateToOtpVerifyScreen(navController: NavHostController,fromScreen: String, closeCurrent: Boolean = true) {
+    navController.navigate("${AppScreens.OtpVerifiedScreen.route}/$fromScreen") {
         shouldCloseCurrent(navController, closeCurrent)
     }
 }
@@ -64,8 +64,8 @@ fun navigateToLanguageScreen(navController: NavHostController, closeCurrent: Boo
     }
 }
 
-fun navigateToUpdateProfileScreen(navController: NavHostController, closeCurrent: Boolean = false) {
-    navController.navigate(AppScreens.UpdateProfileScreen.route) {
+fun navigateToUpdateProfileScreen(navController: NavHostController, closeCurrent: Boolean = false,fromFlow: String) {
+    navController.navigate("${AppScreens.UpdateProfileScreen.route}/$fromFlow") {
         shouldCloseCurrent(navController, closeCurrent)
     }
 
@@ -87,6 +87,17 @@ fun navigateLoanStatusDetailScreen(
 ) {
     shouldCloseCurrent(navController, closeCurrent)
     navController.navigate(AppScreens.LoanStatusDetailScreen.route)
+}
+fun navigateToLoanOffersScreen(
+    navController: NavHostController,  offerItem: String, fromFlow: String,withoutAAResponse : String = "Not GetUserStatus flow",
+    closeCurrent: Boolean = false
+) {
+    val encodedResponseItem = Uri.encode(offerItem)
+    val encodedSearchResponse= Uri.encode(withoutAAResponse)
+    val destinationUri = "${AppScreens.LoanOffersScreen.route}/$encodedResponseItem/$fromFlow/$encodedSearchResponse"
+    navController.navigate(destinationUri) {
+        shouldCloseCurrent(navController, closeCurrent)
+    }
 }
 
 fun navigateToLoanOffersListScreen(
@@ -168,6 +179,7 @@ fun navigateUserDetailScreen(navController: NavHostController, closeCurrent: Boo
 fun navigateApplyByCategoryScreen(navController: NavHostController, closeCurrent: Boolean = true) {
     navController.navigate(AppScreens.ApplyBycategoryScreen.route) {
         shouldCloseCurrent(navController, closeCurrent)
+        popUpToRoute
     }
 }
 
@@ -255,10 +267,11 @@ fun navigateToAccountDetailsScreen(
 }
 
 fun navigateToWebViewFlowOneScreen(
-    navController: NavHostController, purpose: String, fromFlow: String,
+    navController: NavHostController, purpose: String, fromFlow: String,id:String,transactionId: String, url: String,
     closeCurrent: Boolean = false
 ) {
-    navController.navigate("${AppScreens.SearchWebViewScreen.route}/$purpose/$fromFlow") {
+    val encodedUrl = Uri.encode(url)
+    navController.navigate("${AppScreens.SearchWebViewScreen.route}/$purpose/$fromFlow/$id/$transactionId/$encodedUrl") {
         shouldCloseCurrent(navController, closeCurrent)
     }
 }
@@ -345,12 +358,12 @@ fun navigateToAnimationLoader(
 
 fun navigateToKycAnimation(
     navController: NavHostController, transactionId: String, offerId: String, responseItem: String,
-    closeCurrent: Boolean = false
+    closeCurrent: Boolean = false,fromFlow: String
 ) {
     val encodedUrl = Uri.encode(responseItem)
 
     // Construct the destination URI by appending the encoded responseItem to the route
-    val destinationUri = "${AppScreens.KycAnimation.route}/$transactionId/$encodedUrl/$offerId"
+    val destinationUri = "${AppScreens.KycAnimation.route}/$transactionId/$encodedUrl/$offerId/$fromFlow"
 
     // Navigate to the destination URI with proper navigation options
     navController.navigate(destinationUri) {
@@ -362,7 +375,8 @@ fun navigateToSelectBankScreen(
     navController: NavHostController, purpose: String, fromFlow: String,
     closeCurrent: Boolean = false
 ) {
-    navController.navigate("${AppScreens.SelectBankScreen.route}/$purpose/$fromFlow") {
+    val encodedPurpose = Uri.encode(purpose)
+    navController.navigate("${AppScreens.SelectBankScreen.route}/$encodedPurpose/$fromFlow") {
         shouldCloseCurrent(navController, closeCurrent)
     }
 }
@@ -371,7 +385,8 @@ fun navigateToAccountAgreegatorScreen(
     navController: NavHostController, purpose: String, fromFlow: String,
     closeCurrent: Boolean = false
 ) {
-    navController.navigate("${AppScreens.AccountAgreegatorScreen.route}/$purpose/$fromFlow") {
+    val encodedPurpose = Uri.encode(purpose)
+    navController.navigate("${AppScreens.AccountAgreegatorScreen.route}/$encodedPurpose/$fromFlow") {
         shouldCloseCurrent(navController, closeCurrent)
     }
 }
@@ -380,7 +395,8 @@ fun navigateToSelectAccountAgreegatorScreen(
     navController: NavHostController, purpose: String, fromFlow: String,
     closeCurrent: Boolean = false
 ) {
-    navController.navigate("${AppScreens.SelectAccountAgreegatorScreen.route}/$purpose/$fromFlow") {
+    val encodedOffer = Uri.encode(purpose)
+    navController.navigate("${AppScreens.SelectAccountAgreegatorScreen.route}/$encodedOffer/$fromFlow") {
         shouldCloseCurrent(navController, closeCurrent)
     }
 }
@@ -602,6 +618,49 @@ fun navigateToDownPaymentScreen(
         shouldCloseCurrent(navController, closeCurrent)
     }
 }
+
+fun navigateToPfLoanOfferListScreen(
+    navController: NavHostController, offerResponse: String,
+    transactionId: String,
+    fromFlow: String,
+    closeCurrent: Boolean = false
+) {
+    val encodedOfferResponse = Uri.encode(offerResponse)
+    val navigatePath = "${AppScreens.PfLoanOfferListScreen
+        .route}/$transactionId/$encodedOfferResponse/$fromFlow"
+    navController.navigate(navigatePath) {
+        shouldCloseCurrent(navController, closeCurrent)
+    }
+}
+
+
+
+fun navigateToPfKycWebViewScreen(
+    navController: NavHostController, transactionId:String, kycUrl: String, offerId: String,
+    fromScreen: String,
+    fromFlow: String, closeCurrent: Boolean = true
+) {
+    val encodedUrl = Uri.encode(kycUrl)
+    navController.navigate("${AppScreens.PfKycWebViewScreen
+        .route}/$transactionId/$encodedUrl/$offerId/$fromScreen/$fromFlow") {
+        shouldCloseCurrent(navController, closeCurrent)
+    }
+
+}
+
+
+fun navigateToPfInvoiceLoanOfferScreen(
+    navController: NavHostController, offerResponse: String, fromFlow: String,
+    closeCurrent: Boolean = false
+) {
+    val encodedOfferResponse = Uri.encode(offerResponse)
+    val navigatePath =
+        "${AppScreens.PfInvoiceLoanOfferScreen.route}/$encodedOfferResponse/$fromFlow"
+    navController.navigate(navigatePath) {
+        shouldCloseCurrent(navController, closeCurrent)
+    }
+}
+
 
 // Documents
 fun navigateToTermsConditionsScreen(

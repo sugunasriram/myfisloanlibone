@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PincodeModel(
 	val pincode: String? = null,
-	val city: String? = null,
+	val cities: List<String>? = null,
 	val state: String? = null
 )

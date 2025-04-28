@@ -54,10 +54,13 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.components.WebViewTopBar
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToBankKycVerificationScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToFormRejectedScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiPaths
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEData
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEViewModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.storage.TokenManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
@@ -79,7 +82,7 @@ fun GstKycWebViewScreen(
 ) {
     val decidedScreen = if (fromScreen == "1") "2" else "3"
     val sseViewModel: SSEViewModel = viewModel()
-    val sseEvents by sseViewModel.events.collectAsState()
+    val sseEvents by sseViewModel.events.collectAsState(initial = "")
     var lateNavigate = false
     var errorMsg by remember { mutableStateOf<String?>(null) }
     val errorTitle = stringResource(id = R.string.kyc_failed)
@@ -111,54 +114,61 @@ fun GstKycWebViewScreen(
     LaunchedEffect(sseEvents) {
         if (sseEvents.isNotEmpty()) {
             handler.removeCallbacksAndMessages(null)
-            try {
-                val sseData = json1.decodeFromString<SSEData>(sseEvents)
+            val sseData: SSEData? = try {
+                json1.decodeFromString<SSEData>(sseEvents)
+            } catch (e: Exception) {
+                Log.e("SSEParsingError", "Error parsing SSE data", e)
+                null
+            }
+
+            if (sseData != null) {
                 val sseTransactionId = sseData.data?.data?.txnId
-                val formId = sseData.data?.data?.data?.form_id
 
-                Log.d("GSTWebView:", "transactionId :["+transactionId + "] " +
-                        "sseTransactionId:["+ sseTransactionId)
+                    val formId = sseData.data?.data?.data?.form_id
 
-                sseData.data?.data?.type?.let { type ->
-                    if (transactionId == sseTransactionId && (type == "ACTION" || type == "INFO") ) {
-                        //Check if Form Rejected or Pending
-                        if (sseData.data?.data?.data?.error != null){
-                            Log.d("KyCScreen", "Error :"+sseData.data?.data?.data?.error?.message)
-                            errorMsg = sseData.data?.data?.data?.error?.message
+                    Log.d(
+                        "GSTWebView:", "transactionId :[" + transactionId + "] " +
+                                "sseTransactionId:[" + sseTransactionId
+                    )
 
-                            navigateToFormRejectedScreen(
-                                navController = navController,
-                                fromFlow = fromFlow,
-                                errorTitle = errorTitle, errorMsg=errorMsg
-                            )
-                        }else {
-                            if (decidedScreen == "2") {
-                                formId?.let {
-                                    TokenManager.save("formId", formId).toString()
-                                    lateNavigate = true
-                                    navigateToBankKycVerificationScreen(
-                                        navController = navController, kycUrl = "No Need KYC URL",
-                                        transactionId = transactionId,
-                                        offerId = id, verificationStatus = decidedScreen,
-                                        fromFlow = fromFlow
-                                    )
-                                }
+                    sseData.data?.data?.type?.let { type ->
+                        if (transactionId == sseTransactionId && (type == "ACTION" || type == "INFO")) {
+                            //Check if Form Rejected or Pending
+                            if (sseData.data?.data?.data?.error != null) {
+                                Log.d("KyCScreen", "Error :" + sseData.data?.data?.data?.error?.message)
+                                errorMsg = sseData.data?.data?.data?.error?.message
+
+                                navigateToFormRejectedScreen(
+                                    navController = navController,
+                                    fromFlow = fromFlow,
+                                    errorTitle = errorTitle, errorMsg = errorMsg
+                                )
                             } else {
-                                val check = TokenManager.read("formId")
-                                if (formId != check && check != null) {
-                                    navigateToBankKycVerificationScreen(
-                                        navController = navController, kycUrl = "No Need KYC URL",
-                                        transactionId = transactionId,
-                                        offerId = id, verificationStatus = decidedScreen,
-                                        fromFlow = fromFlow
-                                    )
+                                if (decidedScreen == "2") {
+                                    formId?.let {
+                                        TokenManager.save("formId", formId).toString()
+                                        lateNavigate = true
+                                        navigateToBankKycVerificationScreen(
+                                            navController = navController, kycUrl = "No Need KYC URL",
+                                            transactionId = transactionId,
+                                            offerId = id, verificationStatus = decidedScreen,
+                                            fromFlow = fromFlow
+                                        )
+                                    }
+                                } else {
+                                    val check = TokenManager.read("formId")
+                                    if (formId != check && check != null) {
+                                        navigateToBankKycVerificationScreen(
+                                            navController = navController, kycUrl = "No Need KYC URL",
+                                            transactionId = transactionId,
+                                            offerId = id, verificationStatus = decidedScreen,
+                                            fromFlow = fromFlow
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            } catch (e: Exception) {
-                Log.e("SSEParsingError", "Error parsing SSE data", e)
             }
         }
 

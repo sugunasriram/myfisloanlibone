@@ -158,11 +158,11 @@ fun ConsentHandlerScreen(
                                         return super.shouldOverrideUrlLoading(view, request)
                                     }
                                 }
-                                newWebView?.onFocusChangeListener =
-                                    View.OnFocusChangeListener { _, hasFocus ->
-                                        webView.visibility =
-                                            if (hasFocus) View.GONE else View.VISIBLE
-                                    }
+//                                newWebView?.onFocusChangeListener =
+//                                    View.OnFocusChangeListener { _, hasFocus ->
+//                                        webView.visibility =
+//                                            if (hasFocus) View.GONE else View.VISIBLE
+//                                    }
                                 newWebView?.settings?.apply {
                                     javaScriptEnabled = true
                                     cacheMode = WebSettings.LOAD_NO_CACHE

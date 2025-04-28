@@ -1,6 +1,7 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.personalLoan
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -46,6 +47,9 @@ class WebViewModel : BaseViewModel() {
     private val _middleLoan = MutableLiveData(false)
     val middleLoan: LiveData<Boolean> = _middleLoan
 
+    private val _searchFailed = MutableStateFlow(false)
+    val searchFailed: StateFlow<Boolean> = _searchFailed
+
     private val _showLoader = MutableLiveData(false)
     val showLoader: LiveData<Boolean> = _showLoader
 
@@ -82,6 +86,8 @@ class WebViewModel : BaseViewModel() {
         kotlin.runCatching {
             ApiRepository.searchApi(searchBodyModel)
         }.onSuccess { response ->
+            Log.d("serachApi",response?.data.toString())
+            Log.d("serachApi",response?.data?.consentResponse.toString())
             response?.let {
                 handleSearchApiSuccess(response)
             }
@@ -97,7 +103,7 @@ class WebViewModel : BaseViewModel() {
                     _navigationToSignIn.value = true
                 }
             } else {
-                handleFailure(error, context)
+                handleFailure(error, context, isFormSearch = true)
             }
         }
     }
@@ -108,6 +114,11 @@ class WebViewModel : BaseViewModel() {
             _webProgress.value = false
             _searchResponse.value = response
         }
+    }
+
+    fun updateSearchResponse(response: SearchModel){
+        _webViewLoaded.value = true
+        _searchResponse.value = response
     }
 
     private val _isLoading = MutableStateFlow(false)
@@ -247,14 +258,15 @@ class WebViewModel : BaseViewModel() {
         }
     }
 
-    private suspend fun handleFailure(error: Throwable, context: Context) {
+    private suspend fun handleFailure(error: Throwable, context: Context , isFormSearch : Boolean = false) {
         withContext(Dispatchers.Main) {
             if (error is ResponseException) {
                 CommonMethods().handleResponseException(
                     error = error, context = context, updateErrorMessage = ::updateErrorMessage,
                     _showServerIssueScreen = _showServerIssueScreen, _middleLoan = _middleLoan,
                     _unAuthorizedUser = _unAuthorizedUser, _unexpectedError = _unexpectedError,
-                    _showLoader = _showLoader
+                    _showLoader = _showLoader, isFormSearch = isFormSearch ,
+                    searchError = { _searchFailed.value = true }
                 )
             } else {
                 CommonMethods().handleGeneralException(

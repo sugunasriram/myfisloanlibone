@@ -3,6 +3,7 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.components
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -51,6 +52,7 @@ import androidx.compose.material.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,11 +71,13 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -109,6 +113,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlue
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlueTitle
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appDarkTeal
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appGray85
+import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appRed
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appTheme
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.azureBlue
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.bold14Text500
@@ -134,6 +139,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.semiBold24Text7
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.softSteelGray
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.auth.OtpViewModel
+import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.onButtonClicked
 import java.util.Locale
 
 
@@ -491,9 +497,10 @@ fun SpaceBetweenText(
 @Composable
 fun MultipleColorText(
     text: String, modifier: Modifier = Modifier, textColor: Color = hyperTextColor,
-    start: Dp = 8.dp, resendOtpColor: Color = Color.Red, end: Dp = 8.dp, top: Dp = 8.dp,
+    start: Dp = 8.dp, resendOtpColor: Color = appRed, end: Dp = 8.dp, top: Dp = 8.dp,
     bottom: Dp = 8.dp, style: TextStyle = normal14Text500, onClick: () -> Unit,
 ) {
+    val isClickable = resendOtpColor == appRed
     val annotatedString = AnnotatedString.Builder().apply {
         append(text)
         val resendOtpIndex = text.indexOf("Resend OTP")
@@ -511,7 +518,7 @@ fun MultipleColorText(
             color = textColor,
             style = style,
             modifier = modifier
-                .clickable { onClick() }
+                .then(if (isClickable) Modifier.clickable { onClick() } else Modifier)
                 .padding(start = start, end = end, top = top, bottom = bottom),
         )
     }
@@ -1227,13 +1234,12 @@ fun InputView(
             keyboardType = KeyboardType.Number,
             imeAction = ImeAction.Done
         ),
-        keyboardActions = KeyboardActions(onDone = null)
     )
 }
 
 @Composable
 fun OtpView(
-    textList: List<MutableState<TextFieldValue>>, requestList: List<FocusRequester>
+    textList: List<MutableState<TextFieldValue>>, requestList: List<FocusRequester>,pastedEvent: () -> Unit
 ) {
     val otpViewModel: OtpViewModel = viewModel()
     Box(
@@ -1251,6 +1257,11 @@ fun OtpView(
                 InputView(
                     value = textList[i].value,
                     onValueChange = { newValue ->
+                        //pasted event
+                        if( newValue.text.length - textList[i].value.text.length  > 1){
+                            pastedEvent()
+                            return@InputView
+                        }
                         // Filter to only allow single digits
                         val filteredValue = newValue.text.filter { it.isDigit() }.take(1)
 
@@ -1292,15 +1303,21 @@ fun OtpView(
     }
 }
 
+//@Preview
+//@Composable
+//fun OtpViewPreview (){
+//    val textList =
+//        List(6) { remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) } }
+//    val requesterList = List(6) { remember { FocusRequester() } }
+//
+//    OtpView(textList = textList, requestList = requesterList)
+//
+//}
+
 @Preview
 @Composable
-fun OtpViewPreview (){
-    val textList =
-        List(6) { remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) } }
-    val requesterList = List(6) { remember { FocusRequester() } }
-
-    OtpView(textList = textList, requestList = requesterList)
-
+ fun StartImagePrev() {
+    StartImageWithText()
 }
 
 
@@ -1353,8 +1370,12 @@ fun HyperlinkText(
 
 @Composable
 fun TopBar(
-    navController: NavHostController, showBackButton: Boolean = true,
-    showNotificationIcon: Boolean = true, onClick: () -> Unit = { navController.popBackStack() }
+    navController: NavHostController, showBackButton: Boolean = true, ifErrorFlow : Boolean = false,
+    showNotificationIcon: Boolean = true, onClick: () -> Unit = {
+        if (ifErrorFlow) {
+            navigateApplyByCategoryScreen(navController)
+        } else navController.popBackStack()
+    }
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1364,27 +1385,29 @@ fun TopBar(
             .fillMaxWidth()
             .padding(top = 5.dp, bottom = 5.dp)
     ) {
-        if (showBackButton) {
-            Image(
-                painter = painterResource(id = R.drawable.back_icon_blue),
-                contentDescription = stringResource(id = R.string.back_icon),
-                modifier = Modifier
-                    .clickable {
-                        onClick()
-                    }
-                    .padding(start = 8.dp, top = 8.dp, bottom = 8.dp, end = 8.dp)
-            )
-        } else {
-            Spacer(modifier = Modifier.width(40.dp))
-        }
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            if (showBackButton) {
+                Image(
+                    painter = painterResource(id = R.drawable.back_icon_blue),
+                    contentDescription = stringResource(id = R.string.back_icon),
+                    modifier = Modifier
+                        .clickable {
+                            onClick()
+                        }
+                        .padding(start = 8.dp, top = 8.dp, bottom = 8.dp, end = 8.dp)
+                        .align(Alignment.TopStart)
+                )
+            } else {
+                Spacer(modifier = Modifier.width(40.dp))
+            }
 
-        Image(
-            painter = painterResource(R.drawable.app_logo),
-            contentDescription = stringResource(id = R.string.app_logo),
-            modifier = Modifier
-                .size(width = 70.dp, height = 50.dp)
-                .align(Alignment.CenterVertically)
-        )
+            Image(
+                painter = painterResource(R.drawable.app_logo),
+                contentDescription = stringResource(id = R.string.app_logo),
+                modifier = Modifier
+                    .size(width = 70.dp, height = 50.dp)
+            )
+        }
 
         if (showNotificationIcon) {
             /*Image(
@@ -1760,6 +1783,7 @@ fun FixedHeaderBottomScreen(
 
                 if (showDoubleButton){
                     Button(
+                        enabled = checkboxState,
                         onClick = { onClick2?.let { onClick2() } },
                         colors = ButtonDefaults.buttonColors(newBlueColor),
                         shape = RoundedCornerShape(8.dp),
@@ -1779,4 +1803,10 @@ fun FixedHeaderBottomScreen(
             }
         }
     }
+}
+
+@Preview
+@Composable
+private fun PreviewTopBar() {
+    TopBar(rememberNavController(),true,)
 }

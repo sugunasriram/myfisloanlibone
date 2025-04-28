@@ -1,20 +1,26 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.components
 
 import android.annotation.SuppressLint
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,18 +40,23 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.github.sugunasriram.myfisloanlibone.R
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateApplyByCategoryScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateKycScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanProcessScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.bold16Text400
+import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal36Text500
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.semiBold20Text500
 import kotlinx.coroutines.delay
+import java.util.concurrent.TimeUnit
 
 @SuppressLint("ResourceType")
 @Composable
 fun LoaderAnimation(
     text: String = stringResource(id = R.string.please_wait_processing),
     updatedText: String = stringResource(id = R.string.generating_account_aggregator),
-        delayInMillis: Long = 15000, @DrawableRes image: Int = R.raw.invoice_for_offer,
-    @DrawableRes updatedImage: Int = R.raw.invoice_for_offer
+    delayInMillis: Long = 15000, @DrawableRes image: Int = R.raw.invoice_for_offer,
+    @DrawableRes updatedImage: Int = R.raw.invoice_for_offer,
+    showTimer: Boolean = false
 ) {
     var sizeDepends = true
     var currentText by remember { mutableStateOf(text) }
@@ -72,6 +83,10 @@ fun LoaderAnimation(
             .background(color = Color.Transparent), // Set background to transparent
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        if (showTimer) {
+            IncrementTimer()
+        }
+
         LottieAnimation(
             composition = compositionResult.value, progress = progressAnimation,
             modifier = Modifier.size(height = 500.dp, width = 300.dp)
@@ -104,6 +119,8 @@ fun AnimationLoader(
     transactionId: String,
     navController: NavHostController, fromFlow: String
 ) {
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+
     LaunchedEffect(Unit) {
         delay(delayInMillis)
         navigateToLoanProcessScreen(
@@ -132,7 +149,7 @@ fun AnimationLoader(
             modifier = Modifier.size(width = 300.dp, height = 500.dp)
         )
         Text(
-            text = stringResource(id = R.string.please_wait_processing),
+            text = stringResource(id = R.string.processing_please_wait),
             modifier = Modifier
                 .padding(start = 30.dp, end = 30.dp)
                 .fillMaxWidth(),
@@ -151,6 +168,19 @@ fun AnimationLoader(
             )
         }
     }
+
+    val callback = remember {
+        object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                navigateApplyByCategoryScreen(navController = navController)
+            }
+        }
+    }
+
+    DisposableEffect(key1 = backDispatcher) {
+        backDispatcher?.addCallback(callback)
+        onDispose { callback.remove() }
+    }
 }
 
 @SuppressLint("ResourceType")
@@ -159,7 +189,8 @@ fun KycAnimation(
     text: String = stringResource(id = R.string.kyc_verification), delayInMillis: Long = 10000,
     @DrawableRes image: Int = R.raw.kyc_verified, navController: NavHostController,
     transactionId:String, offerId: String,
-    responseItem: String
+    responseItem: String,
+    fromFlow: String
 ) {
 
     LaunchedEffect(Unit) {
@@ -167,7 +198,7 @@ fun KycAnimation(
         navigateKycScreen(
             navController = navController, transactionId =  transactionId, url =  responseItem, id
             =  offerId,
-            fromFlow = "Personal Loan"
+            fromFlow = fromFlow
         )
     }
     val compotionResult: LottieCompositionResult = rememberLottieComposition(
@@ -290,3 +321,40 @@ fun ForeClosureAnimator() {
     }
 }
 
+@Composable
+fun IncrementTimer(maxMinutes: Int = 5) {
+    var minutes by remember { mutableIntStateOf(0) }
+    var seconds by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(maxMinutes) {
+        while (minutes < maxMinutes) {
+            delay(1000L)
+            seconds++
+            if (seconds == 60) {
+                minutes++
+                seconds = 0
+            }
+        }
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = String.format("%02d:%02d", minutes, seconds),
+            style = normal36Text500,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .padding(horizontal = 30.dp)
+                .fillMaxWidth()
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun PreviewIncrementTimer() {
+    IncrementTimer(maxMinutes = 2)
+}

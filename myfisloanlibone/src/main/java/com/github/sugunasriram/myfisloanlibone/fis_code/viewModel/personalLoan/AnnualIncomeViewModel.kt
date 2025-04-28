@@ -106,9 +106,9 @@ class AnnualIncomeViewModel : ViewModel() {
         context: Context, selectedPurpose: String, income: Int
     ) {
         clearMessage()
-        if (selectedPurpose.isEmpty() || selectedPurpose.equals("purpose",ignoreCase = true) == true) {
+       /* if (selectedPurpose.isEmpty() || selectedPurpose.equals("purpose",ignoreCase = true) == true) {
             CommonMethods().toastMessage(context, context.getString(R.string.select_purpose))
-        } else if (income < 30000 || income > 2000000) {
+        } else */if (income < 30000 || income > 2000000) {
             updateGeneralError(context.getString(R.string.please_enter_valid_income_within_limits))
         } else {
             updateUserIncomeApi(context= context, income = income.toString())

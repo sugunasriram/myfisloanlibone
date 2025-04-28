@@ -1,16 +1,26 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.auth
 
+import android.annotation.SuppressLint
+import android.app.UiModeManager
 import android.content.Context
+import android.content.res.Configuration
+import android.os.Build
+import android.provider.Settings
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import com.github.sugunasriram.myfisloanlibone.BuildConfig
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository.handleAuthGetAccessTokenApi
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.AuthOtp
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.DeviceInfo
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.ForgotPasswordOtpVerify
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.LoginDetails
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
+import com.github.sugunasriram.myfisloanlibone.fis_code.utils.storage.TokenManager
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.BaseViewModel
 import io.ktor.client.features.ClientRequestException
 import io.ktor.client.features.ResponseException
@@ -21,7 +31,29 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
+//import com.github.sugunasriram.myfisloanlibone.BuildConfig.FLAVOR_NAME
 
+
+enum class DeviceType(val type: String) {
+    UNKNOWN("UNKNOWN"),
+    PHONE("PHONE"),
+    TABLET("TABLET"),
+    TV("TV"),
+    DESKTOP("DESKTOP")
+}
+
+enum class DeviceStatus(val status: String) {
+    SIMULATOR("SIMULATOR"),
+    REAL("REAL")
+}
+
+enum class OSName(val os: String) {
+    ANDROID("ANDROID"),
+    IOS("IOS"),
+    IPADOS("IPADOS"),
+    WEB("WEB"),
+    WINDOWS("WINDOWS")
+}
 class OtpViewModel : BaseViewModel() {
 
     private val _showInternetScreen = MutableLiveData(false)
@@ -58,33 +90,42 @@ class OtpViewModel : BaseViewModel() {
         updateGeneralError(newData)
     }
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    private val _isSignUpOtpLoading = MutableStateFlow(false)
+    val isSignUpOtpLoading: StateFlow<Boolean> = _isSignUpOtpLoading
 
-    private val _isLoadingSucess = MutableStateFlow(false)
-    val isLoadingSucess: StateFlow<Boolean> = _isLoadingSucess
+    private val _isSignUpOtpLoadingSuccess = MutableStateFlow(false)
+    val isSignUpOtpLoadingSuccess: StateFlow<Boolean> = _isSignUpOtpLoadingSuccess
 
-    private val _authOtpResponse = MutableStateFlow<AuthOtp?>(null)
-    val authOtpResponse: StateFlow<AuthOtp?> = _authOtpResponse
+    private val _signUpAuthOtpResponse = MutableStateFlow<AuthOtp?>(null)
+    val signUpAuthOtpResponse: StateFlow<AuthOtp?> = _signUpAuthOtpResponse
+
+    private val _isLoginOtpLoading = MutableStateFlow(false)
+    val isLoginOtpLoading: StateFlow<Boolean> = _isLoginOtpLoading
+
+    private val _isLoginOtpLoadingSuccess = MutableStateFlow(false)
+    val isLoginOtpLoadingSuccess: StateFlow<Boolean> = _isLoginOtpLoadingSuccess
+
+    private val _loginAuthOtpResponse = MutableStateFlow<AuthOtp?>(null)
+    val loginAuthOtpResponse: StateFlow<AuthOtp?> = _loginAuthOtpResponse
 
     private val _navigationToSignup = MutableStateFlow(false)
     val navigationToSignIn: StateFlow<Boolean> = _navigationToSignup
 
-    private fun authOtpApi(orderId: String, otp: String, context: Context, navController: NavHostController) {
-        _isLoading.value = true
+    private fun signUpAuthOtpApi(orderId: String, otp: String, context: Context, navController: NavHostController) {
+        _isSignUpOtpLoading.value = true
         viewModelScope.launch(Dispatchers.IO) {
-            handleAuthOtpApi(orderId, otp, context, navController)
+            handleSignUpAuthOtpApi(orderId, otp, context, navController)
         }
     }
 
-    private suspend fun handleAuthOtpApi(orderId: String, otp: String, context: Context,
-                                         navController: NavHostController,
-                                         checkForAccessToken: Boolean=true) {
+    private suspend fun handleSignUpAuthOtpApi(orderId: String, otp: String, context: Context,
+                                               navController: NavHostController,
+                                               checkForAccessToken: Boolean=true) {
         kotlin.runCatching {
             ApiRepository.authOtp(orderId, otp)
         }.onSuccess { response ->
             response?.let {
-                handleAuthOtpSuccessResponse(response)
+                handleSignUpAuthOtpSuccessResponse(response)
             }
         }.onFailure { error ->
             // Session Management
@@ -92,7 +133,7 @@ class OtpViewModel : BaseViewModel() {
                 error.response.status.value == 401) {
                 //Get Access Token using RefreshToken
                 if (checkForAccessToken && handleAuthGetAccessTokenApi()){
-                    handleAuthOtpApi(orderId, otp, context, navController,false)
+                    handleSignUpAuthOtpApi(orderId, otp, context, navController,false)
                 }else{
                     // If unable to refresh the token, navigate to the sign-in page
                     _navigationToSignup.value = true
@@ -103,11 +144,114 @@ class OtpViewModel : BaseViewModel() {
         }
     }
 
-    private suspend fun handleAuthOtpSuccessResponse(response: AuthOtp) {
+    private suspend fun handleSignUpAuthOtpSuccessResponse(response: AuthOtp) {
         withContext(Dispatchers.Main) {
-            _authOtpResponse.value = response
-            _isLoading.value = false
-            _isLoadingSucess.value = true
+            _signUpAuthOtpResponse.value = response
+            _isSignUpOtpLoading.value = false
+            _isSignUpOtpLoadingSuccess.value = true
+            response.data?.accessToken?.let { accessToken ->
+                TokenManager.save("accessToken", accessToken)
+            }
+            response.data?.refreshToken?.let { refreshToken ->
+                TokenManager.save("refreshToken", refreshToken)
+            }
+            response.data?.sseId?.let { sseId ->
+                TokenManager.save("sseId",sseId)
+            }
+        }
+    }
+    @SuppressLint("HardwareIds")
+    fun getDeviceInfo(context: Context, configuration: Configuration): DeviceInfo {
+        val isEmulator = Build.FINGERPRINT.contains("generic") || Build.PRODUCT.contains("sdk")
+
+        val deviceType = when {
+            isTv(context) -> DeviceType.TV.type
+            configuration.screenWidthDp >= 600 -> DeviceType.TABLET.type
+            else -> DeviceType.PHONE.type
+        }
+
+        val deviceName = Settings.Secure.getString(context.contentResolver, "device_name")
+            ?: Settings.Global.getString(context.contentResolver, "device_name")
+            ?: Settings.System.getString(context.contentResolver, "bluetooth_name")
+            ?: Settings.Secure.getString(context.contentResolver, "bluetooth_name")
+            ?: Build.MODEL
+
+        val androidId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+
+        return DeviceInfo(
+            brand = Build.BRAND,
+            deviceName = deviceName,
+            deviceType = deviceType,
+            isDevice = if (isEmulator) DeviceStatus.SIMULATOR.status else DeviceStatus.REAL.status,
+            manufacturer = Build.MANUFACTURER,
+            modelId = Build.ID,
+            modelName = Build.MODEL,
+            osName = OSName.ANDROID.os,
+            androidId = androidId?:"UNKNOWN",
+            osVersion = Build.VERSION.RELEASE,
+            platformApiLevel = Build.VERSION.SDK_INT.toString()
+        )
+    }
+
+    private fun isTv(context: Context): Boolean {
+        val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+        return uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
+    }
+    private fun loginAuthOtpApi(orderId: String, otp: String, context: Context, navController: NavHostController,deviceInfo: DeviceInfo) {
+        //PreProd
+        val loginDetails= LoginDetails(orderId,otp,deviceInfo)
+        //Prod
+//        val loginDetails= LoginDetails(orderId,otp)
+//        val flavour = "${BuildConfig.FLAVOR_NAME}"
+
+        _isLoginOtpLoading.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            handleLoginAuthOtpApi(context, navController,loginDetails)
+        }
+    }
+
+    private suspend fun handleLoginAuthOtpApi( context: Context,
+                                               navController: NavHostController,loginDetails: LoginDetails,
+                                               checkForAccessToken: Boolean=true) {
+        kotlin.runCatching {
+            ApiRepository.login(loginDetails)
+        }.onSuccess { response ->
+            response?.let {
+                handleLoginAuthOtpSuccessResponse(response)
+            }
+        }.onFailure { error ->
+            // Session Management
+            if (error is ResponseException &&
+                error.response.status.value == 401) {
+                //Get Access Token using RefreshToken
+                if (checkForAccessToken && handleAuthGetAccessTokenApi()){
+                    handleLoginAuthOtpApi( context, navController,loginDetails,false)
+                }else{
+                    // If unable to refresh the token, navigate to the sign-in page
+                    _navigationToSignup.value = true
+                }
+            }else {
+                handleAuthOtpFailure(error, context)
+            }
+        }
+    }
+
+    private suspend fun handleLoginAuthOtpSuccessResponse(response: AuthOtp) {
+
+        withContext(Dispatchers.Main) {
+            _loginAuthOtpResponse.value = response
+            _isLoginOtpLoading.value = false
+            _isLoginOtpLoadingSuccess.value = true
+
+            response.data?.accessToken?.let { accessToken ->
+                TokenManager.save("accessToken", accessToken)
+            }
+            response.data?.refreshToken?.let { refreshToken ->
+                TokenManager.save("refreshToken", refreshToken)
+            }
+            response.data?.sseId?.let { sseId ->
+                TokenManager.save("sseId",sseId)
+            }
         }
     }
 
@@ -120,8 +264,10 @@ class OtpViewModel : BaseViewModel() {
                 is TimeoutCancellationException -> _showTimeOutScreen.value = true
                 else -> _unexpectedError.value = true
             }
-            _isLoadingSucess.value = false
-            _isLoading.value = false
+//            _isSignUpOtpLoadingSuccess.value = false
+//            _isSignUpOtpLoading.value = false
+            _isLoginOtpLoadingSuccess.value = false
+            _isLoginOtpLoading.value = false
         }
     }
 
@@ -137,12 +283,21 @@ class OtpViewModel : BaseViewModel() {
         }
     }
 
-    fun otpValidation(enteredOtp: String, orderId: String?, context: Context, navController: NavHostController) {
+    fun signUpOtpValidation(enteredOtp: String, orderId: String?, context: Context, navController: NavHostController) {
         clearMessage()
         when {
             enteredOtp.isBlank() -> CommonMethods().toastMessage(context,context.getString(R.string.enter_the_otp))
             enteredOtp.trim().length < 4 -> CommonMethods().toastMessage(context,context.getString(R.string.enter_valid_otp))
-            else -> orderId?.let { authOtpApi(it, enteredOtp.trim(), context, navController) }
+            else -> orderId?.let { signUpAuthOtpApi(it, enteredOtp.trim(), context, navController) }
+        }
+    }
+
+    fun loginOtpValidation(enteredOtp: String, orderId: String?, context: Context, navController: NavHostController,deviceInfo: DeviceInfo) {
+        clearMessage()
+        when {
+            enteredOtp.isBlank() -> CommonMethods().toastMessage(context,context.getString(R.string.enter_the_otp))
+            enteredOtp.trim().length < 4 -> CommonMethods().toastMessage(context,context.getString(R.string.enter_valid_otp))
+            else ->orderId?.let { loginAuthOtpApi(it, enteredOtp.trim(), context, navController,deviceInfo) }
         }
     }
 

@@ -53,7 +53,7 @@ fun TermsConditionsScreen(navController: NavHostController) {
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
             TermsConditionsView(
                 navController = navController, isLoaded = isLoaded, isLoading = isLoading,

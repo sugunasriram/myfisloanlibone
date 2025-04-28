@@ -69,7 +69,7 @@ class RegisterViewModel : ViewModel() {
     val firstName: LiveData<String?> = _firstName
 
     fun onFirstNameChanged(firstName: String) {
-        val sanitizedInput = firstName.replace(Regex("[^a-zA-Z]"), "")
+        val sanitizedInput = firstName.replace(Regex("[^a-zA-Z]\\s"), "")
         if (firstName.length <= 30) {
             _firstName.value = sanitizedInput
             updateGeneralError(null)
@@ -87,7 +87,7 @@ class RegisterViewModel : ViewModel() {
     val lastName: LiveData<String?> = _lastName
 
     fun onLastNameChanged(lastName: String) {
-        val sanitizedInput = lastName.replace(Regex("[^a-zA-Z]"), "")
+        val sanitizedInput = lastName.replace(Regex("[^a-zA-Z]\\s"), "")
         if (lastName.length <= 30) {
             _lastName.value = sanitizedInput
             updateGeneralError(null)
@@ -254,7 +254,7 @@ class RegisterViewModel : ViewModel() {
     val companyName: LiveData<String?> = _companyName
 
     fun onCompanyNameChanged(companyName: String) {
-        val sanitizedInput = companyName.replace(Regex("[^a-zA-Z ]"), "")
+        val sanitizedInput = companyName.replace(Regex("[^a-zA-Z0-9 ]"), "")
         if (companyName.length <= 50) {
             _companyName.value = sanitizedInput
             _companyNameError.value = null
@@ -275,7 +275,7 @@ class RegisterViewModel : ViewModel() {
     private val _pinCode1: MutableLiveData<String?> = MutableLiveData("")
     val pinCode1: LiveData<String?> = _pinCode1
 
-    fun onPinCodeChanged(pinCode1: String,context: Context) {
+    fun onPinCodeChanged1(pinCode1: String, context: Context) {
         val sanitizedInput = pinCode1.replace(Regex("[^0-9]"), "")
         if (pinCode1.length <= 6) {
             _pinCode1.value = sanitizedInput
@@ -289,7 +289,7 @@ class RegisterViewModel : ViewModel() {
     private val _pinCode2: MutableLiveData<String?> = MutableLiveData("")
     val pinCode2: LiveData<String?> = _pinCode2
 
-    fun onPinCodeChanged1(pinCode2: String,context: Context) {
+    fun onPinCodeChanged2(pinCode2: String, context: Context) {
         val sanitizedInput = pinCode2.replace(Regex("[^0-9]"), "")
         if (pinCode2.length <= 6) {
             _pinCode2.value = sanitizedInput
@@ -312,7 +312,7 @@ class RegisterViewModel : ViewModel() {
     private val _city2: MutableLiveData<String?> = MutableLiveData("")
     val city2: LiveData<String?> = _city2
 
-    fun onCityChanged1(city2: String) {
+    fun onCityChanged2(city2: String) {
         val sanitizedInput = city2.replace(Regex("[^a-zA-Z]"), "")
         _city2.value = sanitizedInput
         updateGeneralError(null)
@@ -326,33 +326,33 @@ class RegisterViewModel : ViewModel() {
         updateGeneralError(null)
     }
 
-    private val _address1: MutableLiveData<String?> = MutableLiveData("")
-    val address1: LiveData<String?> = _address1
+    private val _officialAddress: MutableLiveData<String?> = MutableLiveData("")
+    val officialAddress: LiveData<String?> = _officialAddress
 
     fun onAddressChanged(address: String) {
-        _address1.value = address
+        _officialAddress.value = address
         updateGeneralError(null)
     }
 
-    private val _address2: MutableLiveData<String?> = MutableLiveData("")
-    val address2: LiveData<String?> = _address2
+    private val _permanentAddress: MutableLiveData<String?> = MutableLiveData("")
+    val permanentAddress: LiveData<String?> = _permanentAddress
 
     fun onAddressTwoChanged(address2: String) {
-        _address2.value = address2
+        _permanentAddress.value = address2
         updateGeneralError(null)
     }
 
-    private val _addressError: MutableLiveData<String?> = MutableLiveData("")
-    val addressError: LiveData<String?> = _addressError
+    private val _officialAddressError: MutableLiveData<String?> = MutableLiveData("")
+    val officialAddressError: LiveData<String?> = _officialAddressError
 
     fun updateAddressError(addressError: String?) {
-        _addressError.value = addressError
+        _officialAddressError.value = addressError
     }
 
-    private val _address2Error: MutableLiveData<String?> = MutableLiveData("")
-    val address2Error: LiveData<String?> = _address2Error
+    private val _permanentAddressError: MutableLiveData<String?> = MutableLiveData("")
+    val permanentAddressError: LiveData<String?> = _permanentAddressError
     fun updateAddress2Error(address2Error: String?) {
-        _address2Error.value = address2Error
+        _permanentAddressError.value = address2Error
     }
 
     private val _cityError1: MutableLiveData<String> = MutableLiveData("")
@@ -372,14 +372,14 @@ class RegisterViewModel : ViewModel() {
     private val _pinCodeError1: MutableLiveData<String?> = MutableLiveData("")
     val pinCodeError1: LiveData<String?> = _pinCodeError1
 
-    fun updatePinCodeError(pinCodeError1: String?) {
+    fun updatePinCodeError1(pinCodeError1: String?) {
         _pinCodeError1.value = pinCodeError1
     }
 
     private val _pinCodeError2: MutableLiveData<String?> = MutableLiveData("")
     val pinCodeError2: LiveData<String?> = _pinCodeError2
 
-    fun updatePinCodeErrorOne(pinCodeError2: String?) {
+    fun updatePinCodeError2(pinCodeError2: String?) {
         _pinCodeError2.value = pinCodeError2
     }
 
@@ -532,19 +532,20 @@ class RegisterViewModel : ViewModel() {
             updateFirstNameError(context.getString(R.string.please_enter_first_name))
             firstNameFocus.requestFocus()
             requestKeyboard()
-        } else if (!Pattern.compile("^[a-zA-Z]*\$").matcher(firstName).find()) {
+        } else if (!Pattern.compile("^[a-zA-Z ]+\$").matcher(firstName).find()) {
             updateFirstNameError(context.getString(R.string.character_special_validation))
             firstNameFocus.requestFocus()
             requestKeyboard()
-        } else if (firstName.trim().length < 4) {
-            updateFirstNameError(context.getString(R.string.name_should_contain_minimum_4_letters))
+        } else if (firstName.trim().length < 1) {
+            updateFirstNameError(context.getString(R.string
+                .first_name_should_contain_minimum_1_letters))
             firstNameFocus.requestFocus()
             requestKeyboard()
         } else if (lastName.trim().isEmpty()) {
             updateLastNameError(context.getString(R.string.please_enter_last_name))
             lastNameFocus.requestFocus()
             requestKeyboard()
-        } else if (!Pattern.compile("^[a-zA-Z]*\$").matcher(lastName).find()) {
+        } else if (!Pattern.compile("^[a-zA-Z ]+\$").matcher(lastName).find()) {
             updateLastNameError(context.getString(R.string.character_special_validation))
             lastNameFocus.requestFocus()
             requestKeyboard()
@@ -587,7 +588,7 @@ class RegisterViewModel : ViewModel() {
             focusPassword.requestFocus()
             requestKeyboard()
         } else if (mobileNumber.trim().isEmpty()) {
-            updateMobileNumberError(context.getString(R.string.please_enter_mobile_number))
+            updateMobileNumberError(context.getString(R.string.please_enter_phone_number))
             mobileNumberFocus.requestFocus()
             requestKeyboard()
         } else if (!Pattern.compile("^[0-9]*\$").matcher(mobileNumber).find()) {
@@ -606,6 +607,15 @@ class RegisterViewModel : ViewModel() {
             updateGenderError(context.getString(R.string.please_enter_gender))
             genderFocus.requestFocus()
             requestKeyboard()
+        }
+        else if (panNumber.trim().isEmpty()) {
+            updatePanError(context.getString(R.string.please_enter_pan_number))
+            panNumberFocus.requestFocus()
+            requestKeyboard()
+        } else if (CommonMethods().isValidPanNumber(panNumber) != true) {
+            updatePanError(context.getString(R.string.please_enter_valid_pan_number))
+            panNumberFocus.requestFocus()
+            requestKeyboard()
         } else if (employmentType.trim().isEmpty()) {
             updateEmploymentError(context.getString(R.string.please_enter_employment_type))
             employmentFocus.requestFocus()
@@ -613,14 +623,6 @@ class RegisterViewModel : ViewModel() {
         } else if (companyName.trim().isEmpty()) {
             updateCompanyNameError(context.getString(R.string.please_enter_company_name))
             companyNameFocus.requestFocus()
-            requestKeyboard()
-        } else if (panNumber.trim().isEmpty()) {
-            updatePanError(context.getString(R.string.plase_enter_pan_number))
-            panNumberFocus.requestFocus()
-            requestKeyboard()
-        } else if (CommonMethods().isValidPanNumber(panNumber) != true) {
-            updatePanError(context.getString(R.string.plase_enter_valid_pan_number))
-            panNumberFocus.requestFocus()
             requestKeyboard()
         }
             //Sugu - as its Optional
@@ -635,35 +637,43 @@ class RegisterViewModel : ViewModel() {
             udyamNumberFocus.requestFocus()
             requestKeyboard()
         } else if (pinCode.trim().isEmpty()) {
-            updatePinCodeError(context.getString(R.string.please_enter_pincode))
+            updatePinCodeError1(context.getString(R.string.please_enter_pincode))
             pinCodeFocus.requestFocus()
             requestKeyboard()
         } else if (pinCode.trim().length < 6) {
-            updatePinCodeError(context.getString(R.string.please_enter_valid_pincode))
+            updatePinCodeError1(context.getString(R.string.please_enter_valid_pincode))
             pinCodeFocus.requestFocus()
             requestKeyboard()
-        } else if (pinCode1.trim().isEmpty()) {
-            updatePinCodeErrorOne(context.getString(R.string.please_enter_pincode))
+        } else if (address.trim().isEmpty()) {
+            updateAddressError(context.getString(R.string.please_enter_official_address))
+            adressFocus.requestFocus()
+            requestKeyboard()
+        } else if (address.trim().length < 10) {
+            updateAddressError(context.getString(R.string.please_use_min_10_characters))
+            adressFocus.requestFocus()
+            requestKeyboard()
+        }else if (address.trim().length > 255) {
+            updateAddressError(context.getString(R.string.please_use_two_fifity_five_characters))
+            adressFocus.requestFocus()
+            requestKeyboard()
+        }else if (pinCode1.trim().isEmpty()) {
+            updatePinCodeError2(context.getString(R.string.please_enter_pincode))
             pincodeFocus1.requestFocus()
             requestKeyboard()
         } else if (pinCode1.trim().length < 6) {
-            updatePinCodeErrorOne(context.getString(R.string.please_enter_valid_pincode))
+            updatePinCodeError2(context.getString(R.string.please_enter_valid_pincode))
             pincodeFocus1.requestFocus()
             requestKeyboard()
-        } else if (address.trim().isEmpty()) {
-            updateAddressError(context.getString(R.string.please_enter_address))
-            adressFocus.requestFocus()
-            requestKeyboard()
-        } else if (address.trim().length > 100) {
-            updateAddressError(context.getString(R.string.please_use_hundred_characters))
-            adressFocus.requestFocus()
-            requestKeyboard()
-        } else if (address2.trim().isEmpty()) {
-            updateAddress2Error(context.getString(R.string.please_enter_address))
+        }  else if (address2.trim().isEmpty()) {
+            updateAddress2Error(context.getString(R.string.please_enter_the_permanent_address))
             adress2Focus.requestFocus()
             requestKeyboard()
-        } else if (address2.trim().length > 100) {
-            updateAddress2Error(context.getString(R.string.please_use_hundred_characters))
+        } else if (address2.trim().length < 10) {
+            updateAddress2Error(context.getString(R.string.please_use_min_10_characters))
+            adress2Focus.requestFocus()
+            requestKeyboard()
+        } else if (address2.trim().length > 255) {
+            updateAddress2Error(context.getString(R.string.please_use_two_fifity_five_characters))
             adress2Focus.requestFocus()
             requestKeyboard()
         } else if (!checkboxValue) {
@@ -758,29 +768,47 @@ class RegisterViewModel : ViewModel() {
     }
 
     fun updateValidation(
-        navController: NavHostController, checkboxValue: Boolean, firstNameFocus: FocusRequester,
-        lastNameFocus: FocusRequester, personalEmailIdFocus: FocusRequester, context: Context,
-        officialEmailIdFocus: FocusRequester, panNumberFocus: FocusRequester,
-        udyamNumberFocus: FocusRequester, profile: Profile
+        navController: NavHostController, checkboxValue: Boolean, context: Context,
+        firstNameFocus: FocusRequester,
+        lastNameFocus: FocusRequester,
+        personalEmailIdFocus: FocusRequester,
+        officialEmailIdFocus: FocusRequester,
+        dobFocus: FocusRequester,
+        genderFocus: FocusRequester,
+        panNumberFocus: FocusRequester,
+        employmentTypeFocus: FocusRequester,
+        companyNameFocus: FocusRequester,
+        udyamNumberFocus: FocusRequester,
+        pinCodeFocus1: FocusRequester,
+        officialAddressFocus : FocusRequester,
+        pinCodeFocus2: FocusRequester,
+        permanentAddressFocus : FocusRequester,
+        profile: Profile,isGST:Boolean
     ) {
         clearMessage()
+        val pinCode1 = profile.pincode1 ?: ""
+        val pinCode2 = profile.pincode2 ?: ""
+        val officialAddress = profile.address1 ?: ""
+        val permanentAddress = profile.address2 ?: ""
+
         if (profile.firstName.isNullOrEmpty()) {
             updateFirstNameError(context.getString(R.string.please_enter_first_name))
             firstNameFocus.requestFocus()
             requestKeyboard()
-        } else if (!Pattern.compile("^[a-zA-Z]*\$").matcher(profile.firstName).find()) {
+        } else if (!Pattern.compile("^[a-zA-Z ]+\$").matcher(profile.firstName).find()) {
             updateFirstNameError(context.getString(R.string.character_special_validation))
             firstNameFocus.requestFocus()
             requestKeyboard()
-        } else if (profile.firstName.trim().length < 4) {
-            updateFirstNameError(context.getString(R.string.please_enter_valid_first_name))
+        } else if (profile.firstName.trim().length < 1) {
+            updateFirstNameError(context.getString(R.string
+                .first_name_should_contain_minimum_1_letters))
             firstNameFocus.requestFocus()
             requestKeyboard()
         } else if (profile.lastName.isNullOrEmpty()) {
             updateLastNameError(context.getString(R.string.please_enter_last_name))
             lastNameFocus.requestFocus()
             requestKeyboard()
-        } else if (!Pattern.compile("^[a-zA-Z]*\$").matcher(profile.lastName).find()) {
+        } else if (!Pattern.compile("^[a-zA-Z ]+\$").matcher(profile.lastName).find()) {
             updateLastNameError(context.getString(R.string.character_special_validation))
             lastNameFocus.requestFocus()
             requestKeyboard()
@@ -789,7 +817,7 @@ class RegisterViewModel : ViewModel() {
             personalEmailIdFocus.requestFocus()
             requestKeyboard()
         } else if (CommonMethods().isValidEmail(profile.email) != true) {
-            updatePersonalEmailError(context.getString(R.string.please_valid_email_))
+            updatePersonalEmailError(context.getString(R.string.please_enter_valid_email_id))
             personalEmailIdFocus.requestFocus()
             requestKeyboard()
         } else if (profile.officialEmail.isNullOrEmpty()) {
@@ -797,31 +825,122 @@ class RegisterViewModel : ViewModel() {
             officialEmailIdFocus.requestFocus()
             requestKeyboard()
         } else if (CommonMethods().isValidEmail(profile.officialEmail) != true) {
-            updateOfficialEmailError(context.getString(R.string.please_valid_email_))
+            updateOfficialEmailError(context.getString(R.string.please_enter_valid_email_id))
             officialEmailIdFocus.requestFocus()
             requestKeyboard()
-        } else if (profile.panNumber.isNullOrEmpty()) {
-            updatePanError(context.getString(R.string.plase_enter_pan_number))
+        } else if (profile.officialEmail == profile.email) {
+            updateOfficialEmailError(context.getString(R.string.email_id_and_official_email_id_must_be_different))
+            updatePersonalEmailError(context.getString(R.string.email_id_and_official_email_id_must_be_different))
+            officialEmailIdFocus.requestFocus()
+            personalEmailIdFocus.requestFocus()
+            requestKeyboard()
+        } else if (profile.dob.isNullOrEmpty()) {
+            updateDobError(context.getString(R.string.please_enter_dob))
+            dobFocus.requestFocus()
+            requestKeyboard()
+        }  else if (!CommonMethods().isValidDob(profile.dob)) {
+            updateDobError(context.getString(R.string.please_enter_valid_dob))
+            dobFocus.requestFocus()
+            requestKeyboard()
+        } else if (profile.gender.isNullOrEmpty()) {
+            updateGenderError(context.getString(R.string.please_select_gender))
+            genderFocus.requestFocus()
+            requestKeyboard()
+        }else if (profile.panNumber.isNullOrEmpty()) {
+            updatePanError(context.getString(R.string.please_enter_pan_number))
             panNumberFocus.requestFocus()
             requestKeyboard()
         } else if (CommonMethods().isValidPanNumber(profile.panNumber) != true) {
-            updatePanError(context.getString(R.string.plase_enter_valid_pan_number))
+            updatePanError(context.getString(R.string.please_enter_valid_pan_number))
             panNumberFocus.requestFocus()
             requestKeyboard()
-        }
-            //Sugu
-        /*else if (profile.udyamNumber.isNullOrEmpty()) {
-            updateUdyamError(context.getString(R.string.please_enter_udyam_number))
-            udyamNumberFocus.requestFocus()
+        } else if (profile.employmentType.isNullOrEmpty()) {
+            updateEmploymentError(context.getString(R.string.please_enter_employment_type))
+            employmentTypeFocus.requestFocus()
             requestKeyboard()
-        }*/
-        else if (!profile.udyamNumber.isNullOrEmpty() && CommonMethods().isValidUdyamNumber(profile
-            .udyamNumber) != true) {
-            updateUdyamError(context.getString(R.string.please_enter_valid_udyam_number))
-            udyamNumberFocus.requestFocus()
+        } else if (profile.companyName.isNullOrEmpty()) {
+            updateCompanyNameError(context.getString(R.string.please_enter_company_name))
+            companyNameFocus.requestFocus()
             requestKeyboard()
-        } else if (!checkboxValue) {
-            CommonMethods().toastMessage(context,context.getString(R.string.select_terms_and_conditions))
+        } else if(isGST && profile.udyamNumber.isNullOrEmpty()){
+//            if (profile.udyamNumber.isNullOrEmpty()) {
+                updateUdyamError(context.getString(R.string.please_enter_udyam_number))
+                udyamNumberFocus.requestFocus()
+                requestKeyboard()
+
+            }
+           else  if (!profile.udyamNumber.isNullOrEmpty() && CommonMethods().isValidUdyamNumber(profile.udyamNumber) != true ) {
+                updateUdyamError(context.getString(R.string.please_enter_valid_udyam_number))
+                udyamNumberFocus.requestFocus()
+                requestKeyboard()
+
+            }
+        else if (officialAddress.trim().isEmpty()) {
+            updateAddressError(context.getString(R.string.please_enter_official_address))
+            officialAddressFocus.requestFocus()
+            requestKeyboard()
+        }  else if (isNotValidAddress(officialAddress.trim())) {
+            updateAddressError(context.getString(R.string.please_enter_proper_official_address))
+            officialAddressFocus.requestFocus()
+            requestKeyboard()
+        } else if (officialAddress.trim().length < 10) {
+            updateAddressError(context.getString(R.string.please_use_min_10_characters))
+            officialAddressFocus.requestFocus()
+            requestKeyboard()
+        }else if (officialAddress.trim().length > 255) {
+            updateAddressError(context.getString(R.string.please_use_two_fifity_five_characters))
+            officialAddressFocus.requestFocus()
+            requestKeyboard()
+        } else if (pinCode1.trim().isEmpty()) {
+            updatePinCodeError1(context.getString(R.string.please_enter_pincode))
+            pinCodeFocus1.requestFocus()
+            requestKeyboard()
+        } else if (pinCode1.trim().length < 6) {
+            updatePinCodeError1(context.getString(R.string.please_enter_valid_pincode))
+            pinCodeFocus1.requestFocus()
+            requestKeyboard()
+        } else if (pinCode1.trim().isEmpty()) {
+            updatePinCodeError1(context.getString(R.string.please_enter_pincode))
+            pinCodeFocus1.requestFocus()
+            requestKeyboard()
+        } else if (pinCode1.trim().length < 6) {
+            updatePinCodeError1(context.getString(R.string.please_enter_valid_pincode))
+            pinCodeFocus1.requestFocus()
+            requestKeyboard()
+        } else if (permanentAddress.trim().isEmpty()) {
+            updateAddress2Error(context.getString(R.string.please_enter_the_permanent_address))
+            permanentAddressFocus.requestFocus()
+            requestKeyboard()
+        } else if (isNotValidAddress(permanentAddress.trim())) {
+            updateAddress2Error(context.getString(R.string.please_enter_proper_permanent_address))
+            permanentAddressFocus.requestFocus()
+            requestKeyboard()
+        } else if (permanentAddress.trim().length < 10) {
+            updateAddress2Error(context.getString(R.string.please_use_min_10_characters))
+            permanentAddressFocus.requestFocus()
+            requestKeyboard()
+        }else if (permanentAddress.trim().length > 255) {
+            updateAddress2Error(context.getString(R.string.please_use_two_fifity_five_characters))
+            permanentAddressFocus.requestFocus()
+            requestKeyboard()
+        } else if (pinCode2.trim().isEmpty()) {
+            updatePinCodeError2(context.getString(R.string.please_enter_pincode))
+            pinCodeFocus2.requestFocus()
+            requestKeyboard()
+        } else if (pinCode2.trim().length < 6) {
+            updatePinCodeError2(context.getString(R.string.please_enter_valid_pincode))
+            pinCodeFocus2.requestFocus()
+            requestKeyboard()
+        } else if (pinCode2.trim().isEmpty()) {
+            updatePinCodeError2(context.getString(R.string.please_enter_pincode))
+            pinCodeFocus2.requestFocus()
+            requestKeyboard()
+        } else if (pinCode2.trim().length < 6) {
+            updatePinCodeError2(context.getString(R.string.please_enter_valid_pincode))
+            pinCodeFocus2.requestFocus()
+            requestKeyboard()
+        }  else if (!checkboxValue) {
+            CommonMethods().toastMessage(context,context.getString(R.string.please_accept_our_agent_may_call_u))
         } else {
             updateUserDetails(profile, context, navController)
         }
@@ -832,6 +951,13 @@ class RegisterViewModel : ViewModel() {
 
     fun onCheckBoxDetailChanged(checkBoxDetail: Boolean) {
         _checkBoxDetail.value = checkBoxDetail
+        if (checkBoxDetail) {
+            updateGeneralError(null)
+            _isCompleted.value = true //Sugu
+
+        }else{
+            _isCompleted.value = false
+        }
     }
 
     fun onCheckBoxDetailReset() {
@@ -897,9 +1023,9 @@ class RegisterViewModel : ViewModel() {
                 _panNumber.value = it.data?.panNumber
                 _employment.value = it.data?.employmentType
                 _companyName.value = it.data?.companyName
-                _udyamNumber.value = it.data?.udyamNumber
-                _address1.value = it.data?.address1
-                _address2.value = it.data?.address2
+                _udyamNumber.value = it.data?.udyamNumber ?: ""
+                _officialAddress.value = it.data?.address1
+                _permanentAddress.value = it.data?.address2
                 _city1.value = it.data?.city1
                 _city2.value = it.data?.city2
                 _pinCode1.value = it.data?.pincode1
@@ -927,14 +1053,16 @@ class RegisterViewModel : ViewModel() {
                 response?.let {
                     _pinCodeResponse.value = it
                     withContext(Dispatchers.Main) {
-                        if (it.city.isNullOrEmpty() || it.state.isNullOrEmpty()) {
+                        if (it.cities.isNullOrEmpty() || it.state.isNullOrEmpty()) {
                             Log.d("Null Or Empty", "City or state is null or empty")
                         } else {
-                            _city1.value = it.city
+                            _city1.value = it.cities[0]
                             _state1.value = it.state
                         }
                     }
                 } ?: withContext(Dispatchers.Main) {
+                    _pinCode1.value = ""
+                    updatePinCodeError1("Invalid Pincode")
                    CommonMethods().toastMessage(
                        context = context, toastMsg = "Please Enter Valid PinCode"
                    )
@@ -958,10 +1086,12 @@ class RegisterViewModel : ViewModel() {
                 response?.let {
                     _nearCityResponse.value = it
                     withContext(Dispatchers.Main) {
-                        _city2.value = it.city
+                        _city2.value = it.cities?.get(0)
                         _state2.value = it.state
                     }
                 } ?: withContext(Dispatchers.Main) {
+                    _pinCode2.value = ""
+                    updatePinCodeError2("Invalid Pincode")
                     CommonMethods().toastMessage(
                         context = context, toastMsg = "Please Enter Valid PinCode"
                     )
@@ -1065,7 +1195,7 @@ class RegisterViewModel : ViewModel() {
     private val _logoutResponse = MutableStateFlow<Logout?>(null)
     val logoutResponse: StateFlow<Logout?> = _logoutResponse
 
-    fun logout(refreshToken: String, navController: NavHostController) {
+    fun logout(refreshToken: String, navController: NavHostController,checkForAccessToken: Boolean = true) {
         viewModelScope.launch(Dispatchers.IO) {
             kotlin.runCatching {
                 ApiRepository.logout(refreshToken)
@@ -1078,10 +1208,28 @@ class RegisterViewModel : ViewModel() {
                     }
                 }
             }.onFailure { error ->
-                withContext(Dispatchers.Main) {
-                    _logoutResponse.value = null
+                if (error is ResponseException &&
+                    error.response.status.value == 401
+                ) {
+                    if (checkForAccessToken && handleAuthGetAccessTokenApi()) {
+                        logout(refreshToken, navController,false)
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            _logoutResponse.value = null
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        _logoutResponse.value = null
+                    }
                 }
             }
         }
+    }
+
+
+    private fun isNotValidAddress(input: String): Boolean {
+        val regex = Regex("^[a-zA-Z0-9,./#'\\-\\s]*$")
+        return !regex.matches(input)
     }
 }

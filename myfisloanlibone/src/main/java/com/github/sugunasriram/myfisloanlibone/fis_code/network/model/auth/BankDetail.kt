@@ -132,3 +132,28 @@ data class GstBankDetail(
 	val id: String? = null,
 	val loanType: String? = null
 )
+
+@Serializable
+data class PfBankDetail(
+	val accountNumber: String? = null,
+	val accountHolderName: String? = null,
+	val ifscCode: String? = null,
+	val id: String? = null,
+	val loanType: String? = null
+)
+
+
+@Serializable
+data class PfAddBankDetail(
+	@SerialName("account_holder_name")
+	val accountHolderName: String? = null,
+
+	@SerialName("account_type")
+	val accountType: String? = null,
+
+	@SerialName("bank_ifsc_code")
+	val ifscCode: String? = null,
+
+	@SerialName("bank_account_number")
+	val bankAccountNumber: String? = null
+)

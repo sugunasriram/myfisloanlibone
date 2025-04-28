@@ -2,6 +2,8 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.utils
 
 import android.content.Context
 import android.content.Intent
+import android.icu.text.DecimalFormat
+import android.icu.text.DecimalFormatSymbols
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -14,6 +16,7 @@ import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateApplyByCategoryScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateSignInPage
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.invalid.NegativeCommonScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.views.invalid.NoResponseFormLenders
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.invalid.RequestTimeOutScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.invalid.UnAuthorizedScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.invalid.UnexpectedErrorScreen
@@ -32,8 +35,14 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 import java.util.concurrent.TimeoutException
 import java.util.regex.Pattern
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 class CommonMethods {
+
+    companion object {
+        const val BASE_URL = "https://stagingondcfs.jtechnoparks.in/jt-bap"
+    }
 
     private val emailPattern =
         "[a-zA-Z0-9+._%\\-]{1,256}" + "@" + "[a-zA-Z0-9][a-zA-Z0-9\\-]{0,64}" + "(" + "\\." + "[a-zA-Z0-9][a-zA-Z0-9\\-]{0,25}" + ")+"
@@ -46,7 +55,7 @@ class CommonMethods {
     The password is at least 4 characters long.
     */
     private val passwordPattern =
-        "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{4,}$"
+        "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$"
 
     /* Exactly 5 uppercase letters (A-Z).
         Followed by exactly 4 digits (0-9).
@@ -128,6 +137,10 @@ class CommonMethods {
         format.isGroupingUsed = true
 
         return format.format(amount)
+    }
+
+    fun roundToNearestHundred(value: Float): Float {
+        return Math.round(value / 100) * 100.toFloat()
     }
 
     @Composable
@@ -219,7 +232,7 @@ class CommonMethods {
 
     @Composable
     fun ShowUnexpectedErrorScreen(navController: NavHostController) {
-        UnexpectedErrorScreen(onClick = { navigateApplyByCategoryScreen(navController) })
+        UnexpectedErrorScreen(navController = navController,onClick = { navigateApplyByCategoryScreen(navController) })
     }
 
     @Composable
@@ -230,14 +243,10 @@ class CommonMethods {
     }
 
     @Composable
-    fun ShowMiddleLoanErrorScreen(
-        navController: NavHostController, errorMessage: String, errorMsgShow: Boolean = false
+    fun ShowNoResponseFormLendersScreen(
+        navController: NavHostController
     ) {
-        UnexpectedErrorScreen(
-            errorMsgShow = errorMsgShow, errorText = errorMessage,
-            errorMsg = stringResource(id = R.string.middle_loan_error_message),
-            onClick = { navigateApplyByCategoryScreen(navController) }
-        )
+        NoResponseFormLenders(navController = navController)
     }
 
     data class RemainingTime(
@@ -340,7 +349,7 @@ class CommonMethods {
             }
 
             unexpectedErrorScreen -> {
-                UnexpectedErrorScreen(onClick = { navigateSignInPage(navController) })
+                UnexpectedErrorScreen(navController = navController,onClick = { navigateSignInPage(navController) })
             }
 
             unAuthorizedUser -> {
@@ -394,7 +403,8 @@ class CommonMethods {
         error: ResponseException, _showServerIssueScreen: MutableLiveData<Boolean>,
         _middleLoan: MutableLiveData<Boolean>, _unAuthorizedUser: MutableLiveData<Boolean>,
         _unexpectedError: MutableLiveData<Boolean>, updateErrorMessage: (String) -> Unit,
-        context: Context,_showLoader: MutableLiveData<Boolean>
+        context: Context,_showLoader: MutableLiveData<Boolean>, isFormSearch : Boolean = false,
+        searchError : () -> Unit = { }
     ) {
         val statusCode = error.response.status.value
         val responseBody = error.response.readText()
@@ -413,16 +423,25 @@ class CommonMethods {
             }
 
             417 -> {
-                try {
-                    val jsonObject = JSONObject(responseBody)
-                    val data = jsonObject.optString("data", "No data available")
-                    updateErrorMessage(data)
-                } catch (e: JSONException) {
-                    Log.e("Error", "Error parsing response body", e)
+                if (isFormSearch) {
+                    if(responseBody.contains("already user in the middle of loan application")){
+                        _middleLoan.value = true
+                    }else{
+                        searchError()
+                    }
+                } else {
+                    try {
+                        val jsonObject = JSONObject(responseBody)
+                        val data = jsonObject.optString("data", "No data available")
+                        updateErrorMessage(data)
+                    } catch (e: JSONException) {
+                        Log.e("Error", "Error parsing response body", e)
+                    }
+                    _middleLoan.value = true
                 }
-                _middleLoan.value = true
             }
-            404 ->{
+
+            404 -> {
                 try {
                     val jsonObject = JSONObject(responseBody)
                     val data = jsonObject.optString("data", "No data available")
@@ -442,6 +461,34 @@ class CommonMethods {
         val dateString = date
         val actualDate = dateString.split("T")[0]
         return actualDate
+    }
+
+    fun isValidDob(dob : String) : Boolean  {
+        val pattern = """^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$"""
+//        val pattern = """^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"""
+        if(!dob.matches(Regex(pattern))) return false
+
+        return try {
+            val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+//            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+            val dobDate = LocalDate.parse(dob, formatter)
+            val today = LocalDate.now()
+            val adultDate = today.minusYears(18)
+
+            dobDate.isBefore(adultDate)
+        } catch (e: DateTimeParseException) {
+            false
+        }
+    }
+
+    fun formatWithCommas(number: Int): String {
+        try {
+            val decimalFormat = DecimalFormat("##,##,###", DecimalFormatSymbols(Locale("en", "IN")))
+            return decimalFormat.format(number)
+        } catch (e: Exception) {
+            print(e.message)
+            return ""
+        }
     }
 
 }

@@ -54,7 +54,7 @@ fun GstInvoiceDetailScreen(navController: NavHostController, fromFlow: String, i
                 )
             } else {
                 CommonMethods().toastMessage(
-                    context = context, toastMsg = context.getString(R.string.please_agree_terms)
+                    context = context, toastMsg = context.getString(R.string.please_accept_terms)
                 )
             }
         }

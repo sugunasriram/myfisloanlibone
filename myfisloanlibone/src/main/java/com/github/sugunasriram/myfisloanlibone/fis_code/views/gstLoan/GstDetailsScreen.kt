@@ -93,7 +93,7 @@ fun GstDetailsScreen(navController: NavHostController, fromFlow: String) {
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
             GstDetailsScreenView(
                 generatedOtp = generatedOtp, navController = navController, gstNumber = gstNumber,

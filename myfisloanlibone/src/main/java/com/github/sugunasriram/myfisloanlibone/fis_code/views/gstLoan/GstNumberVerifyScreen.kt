@@ -42,7 +42,6 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal20Text500
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal32Text700
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.gstLoan.GstDetailViewModel
-import com.github.sugunasriram.myfisloanlibone.fis_code.views.auth.OtpScreen
 import kotlinx.coroutines.delay
 
 @SuppressLint("UnrememberedMutableState")
@@ -54,7 +53,7 @@ fun GstNumberVerifyScreen(
     val gstDetailViewModel: GstDetailViewModel = viewModel()
     val generatingOtp by gstDetailViewModel.generatingOtp.collectAsState()
     val generatedOtp by gstDetailViewModel.generatedOtp.collectAsState()
-    val verifyOtpForGstin by gstDetailViewModel.verifyOtpForGstin.collectAsState()
+    val verifyOtpForGstIn by gstDetailViewModel.verifyOtpForGstIn.collectAsState()
 
     val showInternetScreen by gstDetailViewModel.showInternetScreen.observeAsState(false)
     val showTimeOutScreen by gstDetailViewModel.showTimeOutScreen.observeAsState(false)
@@ -87,13 +86,13 @@ fun GstNumberVerifyScreen(
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
             if (generatingOtp) {
                 CenterProgress()
             } else {
                 if (generatedOtp) {
-                    verifyOtpForGstin?.data?.id?.let { gstId ->
+                    verifyOtpForGstIn?.data?.id?.let { gstId ->
                         navigateToGstInformationScreen(
                             navController = navController, fromFlow = fromFlow, invoiceId = gstId
                         )
@@ -124,7 +123,7 @@ fun GstNumberVerifyScreen(
                             )
                         }
 
-                        OtpView(textList = textList, requestList = requesterList)
+                        OtpView(textList = textList, requestList = requesterList,{})
 
                         RegisterText(
                             text = if (expired) stringResource(id = R.string.time_expired) else "$count seconds",

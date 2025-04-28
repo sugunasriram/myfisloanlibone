@@ -2,11 +2,19 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.views.sidemenu
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Surface
 import androidx.compose.material.Tab
 import androidx.compose.material.TabRow
 import androidx.compose.material.Text
@@ -20,9 +28,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.github.sugunasriram.myfisloanlibone.R
@@ -36,6 +52,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.Custo
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.OfferResponseItem
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.azureBlueColor
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.deepGreenColor
+import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.negativeGray
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal20Text400
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.whiteGreenColor
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
@@ -139,7 +156,7 @@ fun ActiveLoanScreen(
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
             ActiveLoanScreenView(
                 loanListLoading = loanListLoading, loanListLoaded = loanListLoaded,
@@ -175,32 +192,62 @@ fun ActiveLoanScreenView(
 fun ShowLoans(
     loanList: CustomerLoanList?, navController: NavHostController, showActiveLoanScreen: Boolean
 ) {
-    loanList?.data?.forEach { data ->
-        data.fulfillments?.forEach { fulfilment ->
-            fulfilment?.state?.let { state ->
-                state.descriptor?.name?.let { loanStatus ->
-                    val statusColor =
-                        if (loanStatus.equals("Loan Disbursed", ignoreCase = true)) {
-                            deepGreenColor
-                        } else if (loanStatus.equals("closed", ignoreCase = true)) {
-                            Color.Red
-                        } else {
-                            azureBlueColor
+    loanList?.data?.let {
+        if(it.isEmpty()){
+            EmptyLoanStatusScreen()
+        }else{
+            loanList?.data?.forEach { data ->
+                data.fulfillments?.forEach { fulfilment ->
+                    fulfilment?.state?.let { state ->
+                        state.descriptor?.name?.let { loanStatus ->
+                            val statusColor =
+                                if (loanStatus.equals("Loan Disbursed", ignoreCase = true)) {
+                                    deepGreenColor
+                                } else if (loanStatus.equals("closed", ignoreCase = true)) {
+                                    Color.Red
+                                } else {
+                                    azureBlueColor
+                                }
+                            if (loanStatus.contains("closed", ignoreCase = true) && !showActiveLoanScreen) {
+                                DisplayLoanStatusCard(
+                                    data = data, navController = navController,
+                                    statusColor = statusColor, loanStatus = loanStatus
+                                )
+                            } else if (showActiveLoanScreen) {
+                                DisplayLoanStatusCard(
+                                    data = data, navController = navController,
+                                    statusColor = statusColor, loanStatus = loanStatus
+                                )
+                            }
                         }
-                    if (loanStatus.contains("closed", ignoreCase = true) && !showActiveLoanScreen) {
-                        DisplayLoanStatusCard(
-                            data = data, navController = navController,
-                            statusColor = statusColor, loanStatus = loanStatus
-                        )
-                    } else if (showActiveLoanScreen) {
-                        DisplayLoanStatusCard(
-                            data = data, navController = navController,
-                            statusColor = statusColor, loanStatus = loanStatus
-                        )
                     }
                 }
             }
         }
+    }
+
+}
+
+@Composable
+private fun EmptyLoanStatusScreen() {
+    Column(modifier = Modifier.fillMaxSize().offset(y = (-30).dp), verticalArrangement = Arrangement.Center) {
+
+        Image(
+            painter = painterResource(id = R.drawable.loan_status),
+            contentDescription = "loan Status",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxWidth().size(200.dp)
+        )
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        Text(
+            text = stringResource(R.string.no_existing_loans),
+            textAlign = TextAlign.Center, fontSize = 32.sp, color = negativeGray,
+            fontFamily = FontFamily(Font(R.font.robotocondensed_regular)),
+            fontWeight = FontWeight(800),
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -263,7 +310,8 @@ fun InnerCardView(
         data.quoteBreakUp?.forEach { quoteBreakUp ->
             quoteBreakUp?.let {
                 it.title?.let { title ->
-                    if (title.toLowerCase(Locale.ROOT).contains("principal")) {
+//                    if (title.toLowerCase(Locale.ROOT).contains("principal")) {
+                    if (title.toLowerCase(Locale.ROOT).equals("principal")) {
                         it.value?.let { value ->
                             loanAmountValue = value
                             TextHyphenValueInARow(
@@ -295,6 +343,14 @@ fun InnerCardView(
 }
 
 
+@Preview
+@Composable
+private fun LoanStatusPreview() {
+//    LoanStatusScreen(rememberNavController())
+    Surface {
+        EmptyLoanStatusScreen()
+    }
 
+}
 
 

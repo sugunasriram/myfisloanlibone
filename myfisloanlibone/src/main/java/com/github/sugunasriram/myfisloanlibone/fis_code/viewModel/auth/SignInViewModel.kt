@@ -1,17 +1,23 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.auth
 
 import android.content.Context
+import android.telephony.PhoneNumberUtils
+import android.util.Log
+import android.util.Patterns
 import androidx.compose.ui.focus.FocusRequester
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavHostController
+import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.ForgotPassword
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.GenerateAuthOtp
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.LogIn
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.ResetPassword
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.UserRole
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
-import com.github.sugunasriram.myfisloanlibone.fis_code.utils.storage.TokenManager
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.BaseViewModel
 import io.ktor.client.features.ResponseException
 import io.ktor.client.statement.readText
@@ -132,54 +138,87 @@ class SignInViewModel : BaseViewModel() {
     private val _loginSuccessData = MutableStateFlow<LogIn?>(null)
     val loginSuccessData: StateFlow<LogIn?> = _loginSuccessData
 
-    private fun apiLogin(
+    private val _generatedOtpData = MutableStateFlow<GenerateAuthOtp?>(null)
+    val generatedOtpData: StateFlow<GenerateAuthOtp?> = _generatedOtpData
+
+    private val _userRoleSuccessData = MutableStateFlow<UserRole?>(null)
+    val userRoleSuccessData: StateFlow<UserRole?> = _userRoleSuccessData
+
+    fun getUserRole(
         mobileNumber: String,
         countryCode: String,
-        password: String,
         context: Context
     ) {
         _isLoginInProgress.value = true
         viewModelScope.launch(Dispatchers.IO) {
-            handleApiLogIn(mobileNumber, countryCode, password, context)
+            handleGetUserRole(mobileNumber, countryCode, context)
         }
     }
-
-    private suspend fun handleApiLogIn(
+    private suspend fun handleGetUserRole(
         mobileNumber: String,
         countryCode: String,
-        password: String,
         context: Context
     ) {
         kotlin.runCatching {
-            ApiRepository.login(mobileNumber, countryCode, password)
+            ApiRepository.userRole()
         }.onSuccess { response ->
-            handleLoginSuccess(response)
+            handleGetUserRoleSuccess(response,mobileNumber,countryCode,context)
         }.onFailure { error ->
-            handleLoginFailure(error, context)
+            handleGenerateLoginOtpFailure(error, context)
+//            handleLoginFailure(error, context)
         }
     }
-
-    private suspend fun handleLoginSuccess(response: LogIn?) {
+    private suspend fun handleGetUserRoleSuccess(response: UserRole?, mobileNumber: String,
+                                                 countryCode: String,context: Context) {
         withContext(Dispatchers.Main) {
             if (response != null) {
-                _isLoginInProgress.value = false
-                _isLoginSuccess.value = true
-                _loginSuccessData.value = response
-
-                response.data?.accessToken?.let { accessToken ->
-                    TokenManager.save("accessToken", accessToken)
-                }
-                response.data?.refreshToken?.let { refreshToken ->
-                    TokenManager.save("refreshToken", refreshToken)
-                }
-                response.data?.sseId?.let { sseId ->
-                    TokenManager.save("sseId",sseId)
+                response.data?.find { it.role == "USER" }?.let { userRole ->
+                    val userId = userRole._id
+                    _userRoleSuccessData.value = response
+                    generateLoginOtp(mobileNumber,countryCode,userId,context)
                 }
             }
         }
     }
 
-    private suspend fun handleLoginFailure(error: Throwable, context: Context) {
+    private fun generateLoginOtp(
+        mobileNumber: String,
+        countryCode: String,userRole:String,
+        context: Context
+    ) {
+        _isLoginInProgress.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            handleGenerateLoginOtp(mobileNumber, countryCode,userRole, context)
+        }
+    }
+
+    private suspend fun handleGenerateLoginOtp(
+        mobileNumber: String,
+        countryCode: String, userRole:String,
+        context: Context
+    ) {
+        kotlin.runCatching {
+            ApiRepository.generateAuthOtp(mobileNumber, countryCode,userRole)
+        }.onSuccess { response ->
+            handleGenerateLoginOtpSuccess(response)
+        }.onFailure { error ->
+            Log.d("Sugu : ",error.message.toString())
+            handleGenerateLoginOtpFailure(error, context)
+        }
+    }
+
+//    private suspend fun handleLoginSuccess(response: LogIn?) {
+    private suspend fun handleGenerateLoginOtpSuccess(response: GenerateAuthOtp?) {
+        withContext(Dispatchers.Main) {
+            if (response != null) {
+                _generatedOtpData.value = response
+                _isLoginInProgress.value = false
+                _isLoginSuccess.value = true
+            }
+        }
+    }
+
+    private suspend fun handleGenerateLoginOtpFailure(error: Throwable, context: Context) {
         withContext(Dispatchers.Main) {
             if (error is ResponseException) {
                 handleLogInResponseException(error, context)
@@ -193,9 +232,9 @@ class SignInViewModel : BaseViewModel() {
     private fun handleLogInResponseException(error: ResponseException, context: Context) {
         val statusCode = error.response.status.value
         when (statusCode) {
-            400 -> {
-                CommonMethods().toastMessage(context,context.getString(R.string.user_name_password_wrong))
-            }
+//            400 -> {
+//                CommonMethods().toastMessage(context,context.getString(R.string.user_name_password_wrong))
+//            }
 
             500 -> {
                 _showServerIssueScreen.value = true
@@ -225,56 +264,93 @@ class SignInViewModel : BaseViewModel() {
         _shouldShowKeyboard.value = false
     }
 
-    fun signInButtonValidation(
-        mobileNumber: String,
-        password: String,
-        focusPassword: FocusRequester,
-        focusPhNumber: FocusRequester,
-        context: Context
-    ) {
+    fun signInValidation(navController: NavHostController,
+                         mobileNumber: String,
+                         mobileNumberFocus: FocusRequester,
+                         context: Context
+    ){
         clearMessage()
-        when {
-            mobileNumber.trim().isEmpty() -> {
-                updateEmailError(context.getString(R.string.please_enter_mobile_number))
-                focusPhNumber.requestFocus()
-                requestKeyboard()
-            }
-            !Pattern.compile("^[0-9]*\$").matcher(mobileNumber).find() -> {
-                updateEmailError(context.getString(R.string.should_not_contain_characters_alphabets))
-            }
-            mobileNumber.trim().length < 10 -> {
-                updateEmailError(context.getString(R.string.enter_valid_phone_number))
-                focusPhNumber.requestFocus()
-                requestKeyboard()
-            }
-            CommonMethods().isValidPassword(password) != true -> {
-                if (password.trim().length < 8) {
-                    updatePasswordError(context.getString(R.string.please_valid_password))
-                    /*updatePasswordError(context.getString(R.string.password_contain_eight_characters));*/
-                } else if (!Pattern.compile("[A-Z]").matcher(password).find()) {
-                    updatePasswordError(context.getString(R.string.please_valid_password))
-                    /*updatePasswordError(context.getString(R.string.password_contain_upper_case_characters));*/
-                } else if (!Pattern.compile("[a-z]").matcher(password).find()) {
-                    updatePasswordError(context.getString(R.string.please_valid_password))
-                   /* updatePasswordError(context.getString(R.string.password_contain_lower_case_characters));*/
-                } else if (!Pattern.compile("\\d").matcher(password).find()) {
-                    updatePasswordError(context.getString(R.string.please_valid_password))
-                    /*updatePasswordError(context.getString(R.string.password_contain_digits));*/
-                } else if (!Pattern.compile("[^A-Za-z0-9]").matcher(password).find()) {
-                    updatePasswordError(context.getString(R.string.please_valid_password))
-                    /*updatePasswordError(context.getString(R.string.password_contain_special_characters));*/
-                }else{
-                    updatePasswordError(context.getString(R.string.please_enter_valid_password));
-                }
-                focusPassword.requestFocus();
-                requestKeyboard()
-            }
-
-            else -> {
-                apiLogin(mobileNumber, context.getString(R.string.country_code), password, context)
-            }
+        if (mobileNumber.trim().isEmpty()) {
+            updateMobileNumberError(context.getString(R.string.please_enter_phone_number))
+            mobileNumberFocus.requestFocus()
+            requestKeyboard()
+        } else if (!Pattern.compile("^[0-9]*\$").matcher(mobileNumber).find()) {
+            updateMobileNumberError(context.getString(R.string.should_not_contain_characters_alphabets))
+            mobileNumberFocus.requestFocus()
+            requestKeyboard()
+        } else if (mobileNumber.trim().length < 10) {
+            updateMobileNumberError(context.getString(R.string.please_enter_valid_mobile_number))
+            mobileNumberFocus.requestFocus()
+            requestKeyboard()
+        }  else if (!verifyPhoneNumber(mobileNumber,context)) {
+            updateMobileNumberError(context.getString(R.string.please_enter_valid_mobile_number))
+            mobileNumberFocus.requestFocus()
+        }else{
+            getUserRole(mobileNumber, context.getString(R.string.country_code), context)
         }
+
     }
+
+    private fun verifyPhoneNumber(phoneNumber: String,context: Context): Boolean {
+        val phoneUtil = PhoneNumberUtil.getInstance();
+        val number = phoneUtil.parse(context.getString(R.string.country_code) + phoneNumber, "IN");
+        if(phoneUtil.isValidNumber(number)){
+            return phoneUtil.getNumberType(number) == PhoneNumberUtil.PhoneNumberType.MOBILE
+        }
+        return false
+
+    }
+
+//    fun signInButtonValidation(
+//        mobileNumber: String,
+//        password: String,
+//        focusPassword: FocusRequester,
+//        focusPhNumber: FocusRequester,
+//        context: Context
+//    ) {
+//        clearMessage()
+//        when {
+//            mobileNumber.trim().isEmpty() -> {
+//                updateEmailError(context.getString(R.string.please_enter_mobile_number))
+//                focusPhNumber.requestFocus()
+//                requestKeyboard()
+//            }
+//            !Pattern.compile("^[0-9]*\$").matcher(mobileNumber).find() -> {
+//                updateEmailError(context.getString(R.string.should_not_contain_characters_alphabets))
+//            }
+//            mobileNumber.trim().length < 10 -> {
+//                updateEmailError(context.getString(R.string.enter_valid_phone_number))
+//                focusPhNumber.requestFocus()
+//                requestKeyboard()
+//            }
+//            CommonMethods().isValidPassword(password) != true -> {
+//                if (password.trim().length < 8) {
+//                    updatePasswordError(context.getString(R.string.please_valid_password))
+//                    /*updatePasswordError(context.getString(R.string.password_contain_eight_characters));*/
+//                } else if (!Pattern.compile("[A-Z]").matcher(password).find()) {
+//                    updatePasswordError(context.getString(R.string.please_valid_password))
+//                    /*updatePasswordError(context.getString(R.string.password_contain_upper_case_characters));*/
+//                } else if (!Pattern.compile("[a-z]").matcher(password).find()) {
+//                    updatePasswordError(context.getString(R.string.please_valid_password))
+//                   /* updatePasswordError(context.getString(R.string.password_contain_lower_case_characters));*/
+//                } else if (!Pattern.compile("\\d").matcher(password).find()) {
+//                    updatePasswordError(context.getString(R.string.please_valid_password))
+//                    /*updatePasswordError(context.getString(R.string.password_contain_digits));*/
+//                } else if (!Pattern.compile("[^A-Za-z0-9]").matcher(password).find()) {
+//                    updatePasswordError(context.getString(R.string.please_valid_password))
+//                    /*updatePasswordError(context.getString(R.string.password_contain_special_characters));*/
+//                }else{
+//                    updatePasswordError(context.getString(R.string.please_enter_valid_password));
+//                }
+//                focusPassword.requestFocus();
+//                requestKeyboard()
+//            }
+//
+//            else -> {
+//                apiLogin(mobileNumber, context.getString(R.string.country_code), password, context)
+//            }
+//        }
+//    }
 
 
     private val _passwordLoading = MutableStateFlow(false)
@@ -363,7 +439,7 @@ class SignInViewModel : BaseViewModel() {
         clearMessage()
         when {
             mobileNumber.trim().isEmpty() -> {
-                updateMobileNumberError(context.getString(R.string.please_enter_mobile_number))
+                updateMobileNumberError(context.getString(R.string.please_enter_phone_number))
                 focusPhNumber.requestFocus()
                 requestKeyboard()
             }

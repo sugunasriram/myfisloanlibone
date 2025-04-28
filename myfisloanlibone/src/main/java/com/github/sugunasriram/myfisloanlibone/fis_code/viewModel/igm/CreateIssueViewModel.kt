@@ -80,6 +80,10 @@ class CreateIssueViewModel : ViewModel() {
         }
     }
 
+    fun clearShortDesc(){
+        _shortDesc.value = ""
+    }
+
     private val _shortDescError: MutableLiveData<String?> = MutableLiveData("")
     val shortDescError: LiveData<String?> = _shortDescError
 
@@ -104,11 +108,27 @@ class CreateIssueViewModel : ViewModel() {
     private val _category: MutableLiveData<String?> = MutableLiveData("")
     val category: LiveData<String?> = _category
 
+    private val _categoryError: MutableStateFlow<String?> = MutableStateFlow(null)
+    val categoryError: StateFlow<String?> = _categoryError
+
+    private val _subCategoryError: MutableStateFlow<String?> = MutableStateFlow(null)
+    val subCategoryError: StateFlow<String?> = _subCategoryError
+
     private val _issueListResponse = MutableStateFlow<IssueListResponse?>(null)
     val issueListResponse: StateFlow<IssueListResponse?> = _issueListResponse
 
     private val _navigationToSignIn = MutableStateFlow(false)
     val navigationToSignIn: StateFlow<Boolean> = _navigationToSignIn
+
+
+    fun updateCategoryError(categoryError: String?) {
+        _categoryError.value = categoryError
+    }
+
+
+    fun updateSubCategoryError(subCategoryError: String?) {
+        _subCategoryError.value = subCategoryError
+    }
 
     fun getIssueListForUser(context: Context, issueListBody: IssueListBody) {
         _issueListLoading.value = true
@@ -151,6 +171,13 @@ class CreateIssueViewModel : ViewModel() {
             _issueListResponse.value = response
         }
     }
+
+    fun updateImageNotUploadedErrorMessage(){
+        _showImageNotUploadedError.value = true
+    }
+
+    private val _showImageNotUploadedError = MutableStateFlow(false)
+    val showImageNotUploadedError: StateFlow<Boolean> = _showImageNotUploadedError
 
     fun updateValidation(
         shortDesc: String, longDesc: String, categorySelectedText: String, fromFlow: String,
@@ -301,6 +328,12 @@ class CreateIssueViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             handleImageUpload(imageUploadBody, context)
         }
+    }
+
+     fun removeImage(){
+        _imageUploading.value = false
+        _imageUploaded.value = false
+        _imageUploadResponse.value = null
     }
 
     private suspend fun handleImageUpload(

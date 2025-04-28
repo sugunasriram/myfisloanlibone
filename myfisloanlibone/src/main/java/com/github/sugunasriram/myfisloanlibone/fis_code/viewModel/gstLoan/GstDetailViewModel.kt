@@ -184,7 +184,7 @@ class GstDetailViewModel : BaseViewModel() {
         gstin: String, username: String, context: Context, checkForAccessToken: Boolean = true
     ) {
         kotlin.runCatching {
-            ApiRepository.cygnetGenerateOtp(gstin = gstin, username = username)
+            ApiRepository.cygnetGenerateOtp(gstIn = gstin, username = username)
         }.onSuccess { response ->
             handleCygnetGenerateOtpSuccess(response)
         }.onFailure { error ->
@@ -213,9 +213,9 @@ class GstDetailViewModel : BaseViewModel() {
     }
 
     private val _verifyOtpForGstin = MutableStateFlow<GstOtpVerify?>(null)
-    val verifyOtpForGstin: StateFlow<GstOtpVerify?> = _verifyOtpForGstin
+    val verifyOtpForGstIn: StateFlow<GstOtpVerify?> = _verifyOtpForGstin
 
-    fun verifyOtpForGstin(id: String, otp: String, context: Context) {
+    fun verifyOtpForGstIn(id: String, otp: String, context: Context) {
         _generatingOtp.value = true
         viewModelScope.launch(Dispatchers.IO) {
             handleVerifyOtpForGstin(id = id, otp = otp, context = context)
@@ -226,7 +226,7 @@ class GstDetailViewModel : BaseViewModel() {
         id: String, otp: String, context: Context, checkForAccessToken: Boolean = true
     ) {
         kotlin.runCatching {
-            ApiRepository.verifyOtpForGstin(id = id, otp = otp)
+            ApiRepository.verifyOtpForGstIn(id = id, otp = otp)
         }.onSuccess { response ->
             handleVerifyOtpForGstinSuccess(response)
         }.onFailure { error ->
@@ -281,7 +281,7 @@ class GstDetailViewModel : BaseViewModel() {
             )
 
             else -> {
-                verifyOtpForGstin(id = orderId, otp = enteredOtp, context = context)
+                verifyOtpForGstIn(id = orderId, otp = enteredOtp, context = context)
             }
         }
     }

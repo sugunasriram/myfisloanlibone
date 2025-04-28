@@ -91,6 +91,8 @@ fun DropDownTextField(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    val formattedText = selectedText.replaceFirstChar { it.uppercase() }
+
     Row(modifier = Modifier
         .padding(start = start, end = end, top = top, bottom = bottom)
         .clickable {
@@ -103,7 +105,7 @@ fun DropDownTextField(
     ) {
         Box{
             InputField(
-                inputText = selectedText, hint = hint, start = 0.dp, end = 0.dp, top = 0.dp,
+                inputText = formattedText, hint = hint, start = 0.dp, end = 0.dp, top = 0.dp,
                 readOnly = true,
                 modifier = Modifier
                     .focusRequester(focus)

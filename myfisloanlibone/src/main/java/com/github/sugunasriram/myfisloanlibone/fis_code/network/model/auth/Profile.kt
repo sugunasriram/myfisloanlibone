@@ -9,6 +9,15 @@ data class ProfileResponse(
     val statusCode: Int? = null
 )
 @Serializable
+data class SignUpDetails(
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val mobileNumber: String? = null,
+    val countryCode: String? = null,
+    val role: String? = null,
+
+    )
+@Serializable
 data class Profile(
     val firstName: String? = null,
     val lastName: String? = null,

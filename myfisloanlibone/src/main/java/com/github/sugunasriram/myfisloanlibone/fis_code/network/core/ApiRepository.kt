@@ -3,6 +3,7 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.network.core
 import android.util.Log
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.GstOfferListModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.OfferListModel
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.PfOfferListModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.StatusResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.UserStatus
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.AddBankDetail
@@ -16,18 +17,23 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.Custo
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.Data
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.ForgotPassword
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.ForgotPasswordOtpVerify
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.GenerateAuthOtp
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.GstBankDetail
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.IFSCResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.LogIn
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.LoginDetails
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.Logout
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.OrderPaymentStatusResponse
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.PfBankDetail
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.PincodeModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.Profile
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.ProfileResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.ResetPassword
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.SignUpDetails
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.Signup
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.UpdateIncome
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.UpdateProfile
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.UserRole
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.document.AboutUsResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.document.PrivacyPolicyResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.document.TermsConditionResponse
@@ -63,8 +69,11 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoa
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.UpdateConsentHandlerBody
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.UpdateLoanAgreement
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.UpdateLoanAmountBody
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.UpdateLoanAmountPfResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.UpdateLoanBody
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.UpdateResponse
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.pf.PfOfferConfirm
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.pf.PfOfferConfirmResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.storage.TokenManager
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
@@ -88,16 +97,28 @@ object ApiRepository {
                 body = profile
             }
         }
-
     }
 
-    suspend fun login(mobileNumber: String, countryCode: String, password: String): LogIn? {
-        val requestBody = mapOf(
-            "mobileNumber" to mobileNumber, "password" to password, "countryCode" to countryCode
-        )
+    suspend fun userRole(): UserRole? {
+        return KtorClient.getInstance().use { httpClient ->
+            httpClient.get(ApiPaths().authRoles) {
+            }
+        }
+    }
+
+    suspend fun generateAuthOtp(mobileNumber: String, countryCode: String,role:String): GenerateAuthOtp? {
+        val requestBody = mapOf("mobileNumber" to mobileNumber, "countryCode" to countryCode, "role" to role)
+        return KtorClient.getInstance().use { httpClient ->
+            httpClient.post(ApiPaths().authGenerateOtp) {
+                body = requestBody
+            }
+        }
+    }
+
+    suspend fun login(loginDetails: LoginDetails): AuthOtp? {
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().authLogIn) {
-                body = requestBody
+                body = loginDetails
             }
         }
     }
@@ -123,7 +144,7 @@ object ApiRepository {
         }
     }
 
-    private suspend fun authGetAccessToken(refreshToken: String): LogIn {
+    private suspend fun authGetAccessToken(refreshToken: String): AuthOtp {
         val requestBody = mapOf("refreshToken" to refreshToken)
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().authGetAccessToken) {
@@ -173,7 +194,6 @@ object ApiRepository {
 
     suspend fun getUserDetail(): ProfileResponse? {
         return KtorClient.getInstance().use { httpClient ->
-//            httpClient.get(ApiPaths().profile) {
             httpClient.post(ApiPaths().profile) {
                 val accessToken = TokenManager.read("accessToken")
                 val bearerToken = "Bearer $accessToken"
@@ -213,28 +233,35 @@ object ApiRepository {
                 val client = HttpClient(Android)
                 val response: String = client.get(url)
                 client.close()
+
                 val jsonObject = JSONObject(response)
                 if (jsonObject.getString("status") == "OK") {
                     val results = jsonObject.getJSONArray("results")
                     if (results.length() > 0) {
                         val firstResult = results.getJSONObject(0)
                         val addressComponents = firstResult.getJSONArray("address_components")
-                        var city = ""
+
+                        val cities = mutableSetOf<String>()
                         var state = ""
                         for (i in 0 until addressComponents.length()) {
                             val component = addressComponents.getJSONObject(i)
                             val types = component.getJSONArray("types")
-                            if (types.toString().contains("locality")) {
-                                city = component.getString("long_name")
+                            if (types.toString().contains("locality") || types.toString().contains("administrative_area_level_3")) {
+                                cities.add(component.getString("long_name"))
                             } else if (types.toString().contains("administrative_area_level_1")) {
                                 state = component.getString("long_name")
-                            }else if (types.toString().contains("administrative_area_level_3")
-                                && city.length == 0) {
-                                city = component.getString("long_name")
                             }
                         }
-                        if (city.isNotEmpty() && state.isNotEmpty()) {
-                            PincodeModel(pinCode, city, state)
+
+                        if (firstResult.has("postcode_localities")) {
+                            val postcodeLocalities = firstResult.getJSONArray("postcode_localities")
+                            for (i in 0 until postcodeLocalities.length()) {
+                                cities.add(postcodeLocalities.getString(i))
+                            }
+                        }
+
+                        if (cities.isNotEmpty() && state.isNotEmpty()) {
+                            PincodeModel(pinCode, cities.toList(), state)
                         } else {
                             null
                         }
@@ -246,17 +273,18 @@ object ApiRepository {
                 }
             }
         } catch (e: Exception) {
+            Log.e("Error", "Exception: ${e.message}")
             null
         }
     }
 
     // Password Related Flow Api Repository
     suspend fun forgotPasswordApi(
-        mobile_number: String, mobile_number_country_code: String
+        mobileNumber: String, mobileNumberCountryCode: String
     ): ForgotPassword? {
         val requestBody = mapOf(
-            "mobile_number" to mobile_number,
-            "mobile_number_country_code" to mobile_number_country_code
+            "mobile_number" to mobileNumber,
+            "mobile_number_country_code" to mobileNumberCountryCode
         )
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().forgotPassword) {
@@ -362,7 +390,7 @@ object ApiRepository {
             }
         }
     }
-
+//searchApi with AA Consent
     suspend fun searchApi(searchBodyModel: SearchBodyModel): SearchModel? {
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().search) {
@@ -419,6 +447,17 @@ object ApiRepository {
     }
 
     suspend fun updateLoanAmount(updateLoanAmountBody: UpdateLoanAmountBody): UpdateResponse? {
+        return KtorClient.getInstance().use { httpClient ->
+            httpClient.post(ApiPaths().updateLoanAmount) {
+                val accessToken = TokenManager.read("accessToken")
+                val bearerToken = "Bearer $accessToken"
+                header("Authorization", bearerToken)
+                body = updateLoanAmountBody
+            }
+        }
+    }
+
+    suspend fun updatePfLoanAmount(updateLoanAmountBody: UpdateLoanAmountBody): UpdateLoanAmountPfResponse? {
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().updateLoanAmount) {
                 val accessToken = TokenManager.read("accessToken")
@@ -537,6 +576,59 @@ object ApiRepository {
         }
     }
 
+
+
+    //Purchase Finance
+
+    suspend fun pfConfirmOffer(pfOfferConfirm: PfOfferConfirm): PfOfferConfirmResponse? {
+        return KtorClient.getInstance().use { httpClient ->
+            httpClient.post(ApiPaths().updateLoanAmount) {
+                val accessToken = TokenManager.read("accessToken")
+                val bearerToken = "Bearer $accessToken"
+                header("Authorization", bearerToken)
+                body = pfOfferConfirm
+            }
+        }
+    }
+
+    suspend fun pfInitiateOffer(id: String, loanType: String): PfOfferConfirmResponse? {
+        val requestBody = mapOf("id" to id, "loanType" to loanType)
+        return KtorClient.getInstance().use { httpClient ->
+            httpClient.post(ApiPaths().initialOfferSelect) {
+                val accessToken = TokenManager.read("accessToken")
+                val bearerToken = "Bearer $accessToken"
+                header("Authorization", bearerToken)
+                body = requestBody
+            }
+        }
+    }
+
+    suspend fun pfLoanApproved(id: String, loanType: String): PfOfferConfirmResponse? {
+        val requestBody = mapOf("id" to id, "loanType" to loanType)
+        return KtorClient.getInstance().use { httpClient ->
+            httpClient.post(ApiPaths().loanApproved) {
+                val accessToken = TokenManager.read("accessToken")
+                val bearerToken = "Bearer $accessToken"
+                header("Authorization", bearerToken)
+                body = requestBody
+            }
+        }
+    }
+
+    suspend fun pfLoanEntityApproval(bankDetail: PfBankDetail): PfOfferConfirmResponse? {
+        return KtorClient.getInstance().use { httpClient ->
+            httpClient.post(ApiPaths().addAccountDetails) {
+                val accessToken = TokenManager.read("accessToken")
+                val bearerToken = "Bearer $accessToken"
+                header("Authorization", bearerToken)
+                body = bankDetail
+            }
+        }
+    }
+
+
+
+
     //Igm Flow Api Repository
 
     suspend fun getIssueCategories(): IssueCategories? {
@@ -617,8 +709,8 @@ object ApiRepository {
         }
     }
 
-    suspend fun issueById(issue_id: String): IssueByIdResponse? {
-        val requestBody = mapOf("issue_id" to issue_id)
+    suspend fun issueById(issueId: String): IssueByIdResponse? {
+        val requestBody = mapOf("issue_id" to issueId)
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().issueById) {
                 val accessToken = TokenManager.read("accessToken")
@@ -629,8 +721,8 @@ object ApiRepository {
         }
     }
 
-    suspend fun checkOrderIssues(order_id: String): CheckOrderIssueModel? {
-        val requestBody = mapOf("order_id" to order_id)
+    suspend fun checkOrderIssues(orderId: String): CheckOrderIssueModel? {
+        val requestBody = mapOf("order_id" to orderId)
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().checkOrderIssues) {
                 val accessToken = TokenManager.read("accessToken")
@@ -641,8 +733,8 @@ object ApiRepository {
         }
     }
 
-    suspend fun orderIssues(order_id: String): OrderIssueResponse? {
-        val requestBody = mapOf("order_id" to order_id)
+    suspend fun orderIssues(orderId: String): OrderIssueResponse? {
+        val requestBody = mapOf("order_id" to orderId)
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().orderIssues) {
                 val accessToken = TokenManager.read("accessToken")
@@ -653,8 +745,8 @@ object ApiRepository {
         }
     }
 
-    suspend fun cygnetGenerateOtp(gstin: String, username: String): GstOtpResponse? {
-        val requestBody = mapOf("gstin" to gstin, "username" to username)
+    suspend fun cygnetGenerateOtp(gstIn: String, username: String): GstOtpResponse? {
+        val requestBody = mapOf("gstin" to gstIn, "username" to username)
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().cygnetGenerateOtp) {
                 val accessToken = TokenManager.read("accessToken")
@@ -665,7 +757,7 @@ object ApiRepository {
         }
     }
 
-    suspend fun verifyOtpForGstin(id: String, otp: String): GstOtpVerify? {
+    suspend fun verifyOtpForGstIn(id: String, otp: String): GstOtpVerify? {
         val requestBody = mapOf("id" to id, "otp" to otp)
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().verifyOtpForGstIn) {
@@ -677,8 +769,8 @@ object ApiRepository {
         }
     }
 
-    suspend fun gstInvoices(gstin: String): GstInvoice? {
-        val requestBody = mapOf("gstin" to gstin)
+    suspend fun gstInvoices(gstIn: String): GstInvoice? {
+        val requestBody = mapOf("gstin" to gstIn)
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().gstInDetails) {
                 val accessToken = TokenManager.read("accessToken")
@@ -759,6 +851,18 @@ object ApiRepository {
     }
 
     suspend fun gstOfferList(loanType: String): GstOfferListModel? {
+        val requestBody = mapOf("loanType" to loanType)
+        return KtorClient.getInstance().use { httpClient ->
+            httpClient.post(ApiPaths().offerList) {
+                val accessToken = TokenManager.read("accessToken")
+                val bearerToken = "Bearer $accessToken"
+                header("Authorization", bearerToken)
+                body = requestBody
+            }
+        }
+    }
+
+    suspend fun pfOfferList(loanType: String): PfOfferListModel? {
         val requestBody = mapOf("loanType" to loanType)
         return KtorClient.getInstance().use { httpClient ->
             httpClient.post(ApiPaths().offerList) {

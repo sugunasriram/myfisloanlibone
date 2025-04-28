@@ -25,7 +25,6 @@ object TokenManager{
         val preferences = dataStore.data.first()
         return preferences[dataStoreKey]
     }
-
     fun isInitialized(): Boolean {
         return this::dataStore.isInitialized
     }

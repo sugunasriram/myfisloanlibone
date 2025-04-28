@@ -67,6 +67,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.igm.ImageU
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.igm.ImageUploadBody
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.igm.Images
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlack
+import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.errorRed
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal20Text500
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.primaryBlue
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
@@ -97,6 +98,9 @@ fun CreateIssueScreen(
     val imageUploadResponse by createIssuePLViewModel.imageUploadResponse.collectAsState()
     val issueCreating by createIssuePLViewModel.issueCreating.collectAsState()
     val issueCreated by createIssuePLViewModel.issueCreated.collectAsState()
+    val categoryError by createIssuePLViewModel.categoryError.collectAsState()
+    val subCategoryError by createIssuePLViewModel.subCategoryError.collectAsState()
+    val showImageNotUploadedError by createIssuePLViewModel.showImageNotUploadedError.collectAsState()
 
     val navigationToSignIn by createIssuePLViewModel.navigationToSignIn.collectAsState()
 
@@ -106,6 +110,9 @@ fun CreateIssueScreen(
     val unexpectedErrorScreen by createIssuePLViewModel.unexpectedError.observeAsState(false)
     val unAuthorizedUser by createIssuePLViewModel.unAuthorizedUser.observeAsState(false)
 
+
+    val categoryFocus = FocusRequester()
+    val subCategoryFocus = FocusRequester()
     val shortDescFocus = FocusRequester()
     val longDescFocus = FocusRequester()
 
@@ -114,6 +121,12 @@ fun CreateIssueScreen(
     else if (orderState.contains("Loan Disbursed", ignoreCase = true)) "DISBURSED"
     else "INITIATED"
 
+    val categoryErrorMessage = stringResource(R.string.please_select_category)
+    val subCategoryErrorMessage = stringResource(R.string.please_select_sub_category)
+    val shortDescErrorMessage = stringResource(R.string.please_enter_short_description)
+    val longDescErrorMessage = stringResource(R.string.please_enter_long_description)
+    val properShortDescErrorMessage = stringResource(R.string.please_enter_proper_short_description)
+    val properLongDescErrorMessage = stringResource(R.string.please_enter_proper_long_description)
     var categorySelectedText by remember { mutableStateOf("") }
     var categoryExpand by remember { mutableStateOf(false) }
     val categoryList: List<String>
@@ -121,6 +134,7 @@ fun CreateIssueScreen(
     val onCategorySelected: (String) -> Unit = { selectedText ->
         categorySelectedText = selectedText
         createIssuePLViewModel.getIssueWithSubCategories(context, selectedText)
+        createIssuePLViewModel.updateCategoryError(null)
     }
 
     var subCategorySelectedText by remember { mutableStateOf("") }
@@ -128,11 +142,17 @@ fun CreateIssueScreen(
     var subCategoryList by remember { mutableStateOf(listOf<String>()) }
     val onSubCategoryDismiss: () -> Unit = { subCategoryExpand = false }
     val onSubCategorySelected: (String) -> Unit =
-        { selectedText -> subCategorySelectedText = selectedText }
+        { selectedText -> subCategorySelectedText = selectedText
+            createIssuePLViewModel.updateSubCategoryError(null)
+        }
 
     LaunchedEffect(categorySelectedText) {
         if (categorySelectedText.isNotEmpty()) {
             createIssuePLViewModel.getIssueWithSubCategories(context, categorySelectedText)
+            subCategorySelectedText = ""
+            createIssuePLViewModel.removeImage()
+            createIssuePLViewModel.clearShortDesc()
+            createIssuePLViewModel.onLongDescriptionChanged("")
         }
     }
 
@@ -172,13 +192,27 @@ fun CreateIssueScreen(
                             onBackClick = { navController.popBackStack() },
                             onClick = {
                                 onCrateIssueButtonClick(
-                                    imageUploadResponse = imageUploadResponse, context = context,
-                                    shortDesc = shortDesc, longDesc = longDesc, orderId = orderId,
+                                    categoryFocus = categoryFocus,
+                                    subCategoryFocus = subCategoryFocus,
+                                    imageUploadResponse = imageUploadResponse,
+                                    context = context,
+                                    shortDesc = shortDesc,
+                                    longDescFocus = longDescFocus,
+                                    longDesc = longDesc,
+                                    orderId = orderId,
                                     categorySelectedText = categorySelectedText,
                                     createIssuePLViewModel = createIssuePLViewModel,
                                     subCategorySelectedText = subCategorySelectedText,
-                                    providerId = providerId, loanState = loanState,
-                                    fromFlow = fromFlow
+                                    providerId = providerId,
+                                    loanState = loanState,
+                                    shortDescFocus = shortDescFocus,
+                                    fromFlow = fromFlow,
+                                    categoryErrorMessage = categoryErrorMessage,
+                                    subCategoryErrorMessage = subCategoryErrorMessage,
+                                    shortDescErrorMessage = shortDescErrorMessage,
+                                    longDescErrorMessage = longDescErrorMessage,
+                                    properLongDescErrorMessage = properLongDescErrorMessage,
+                                    properShortDescErrorMessage = properShortDescErrorMessage
                                 )
                             }
                         ) {
@@ -206,7 +240,9 @@ fun CreateIssueScreen(
                                 setExpand = { categoryExpand = it },
                                 itemList = categoryList,
                                 onDismiss = onCategoryDismiss,
-                                onItemSelected = onCategorySelected
+                                onItemSelected = onCategorySelected,
+                                focus = categoryFocus,
+                                error = categoryError,
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -218,12 +254,15 @@ fun CreateIssueScreen(
                                 setExpand = { subCategoryExpand = it },
                                 itemList = subCategoryList,
                                 onDismiss = onSubCategoryDismiss,
-                                onItemSelected = onSubCategorySelected
+                                onItemSelected = onSubCategorySelected,
+                                focus = subCategoryFocus,
+                                error = subCategoryError
                             )
 
                             IssuesWithImage(
                                 imageUploaded = imageUploaded, imageUploading = imageUploading,
-                                context = context, createIssuePLViewModel = createIssuePLViewModel
+                                context = context, createIssuePLViewModel = createIssuePLViewModel,
+                                showImageNotUploadedError = showImageNotUploadedError
                             )
                             DiscriptionFeilds(
                                 shortDesc = shortDesc, shortDescFocus = shortDescFocus,
@@ -244,12 +283,16 @@ fun CreateIssueScreen(
 @Composable
 fun IssuesWithImage(
     imageUploaded: Boolean, imageUploading: Boolean, createIssuePLViewModel: CreateIssueViewModel,
-    context: Context,
+    context: Context,showImageNotUploadedError : Boolean,
 ) {
     Spacer(modifier = Modifier.height(8.dp))
     UploadImageCard(
-        imageLabel = "Image upload", imageUploaded = imageUploaded, imageUploading = imageUploading,
-        context = context, createIssueViewModel = createIssuePLViewModel,
+        imageLabel = if (showImageNotUploadedError) "Please upload an image" else "Image upload *",
+        imageUploaded = imageUploaded,
+        imageUploading = imageUploading,
+        context = context,
+        createIssueViewModel = createIssuePLViewModel,
+        cardDataColor = if (showImageNotUploadedError) errorRed else Color.Gray
     )
 
     RegisterText(
@@ -260,23 +303,66 @@ fun IssuesWithImage(
 }
 
 fun onCrateIssueButtonClick(
-    imageUploadResponse: ImageUpload?, shortDesc: String?, longDesc: String?, context: Context,
-    categorySelectedText: String, createIssuePLViewModel: CreateIssueViewModel, orderId: String,
-    subCategorySelectedText: String, providerId: String, loanState: String, fromFlow: String
+    categoryFocus: FocusRequester,
+    subCategoryFocus: FocusRequester,
+    imageUploadResponse: ImageUpload?,
+    shortDescFocus: FocusRequester,
+    longDescFocus: FocusRequester,
+    shortDesc: String?,
+    longDesc: String?,
+    context: Context,
+    categorySelectedText: String,
+    createIssuePLViewModel: CreateIssueViewModel,
+    orderId: String,
+    subCategorySelectedText: String,
+    providerId: String,
+    loanState: String,
+    fromFlow: String,
+    categoryErrorMessage: String,
+    subCategoryErrorMessage: String,
+    shortDescErrorMessage: String,
+    longDescErrorMessage: String,
+    properShortDescErrorMessage: String,
+    properLongDescErrorMessage: String
 ) {
     val images = imageUploadResponse?.data ?: emptyList()
-    shortDesc?.let { shortDisp ->
-        longDesc?.let { longDisp ->
-            createIssuePLViewModel.updateValidation(
-                shortDesc = shortDisp, longDesc = longDisp,
-                categorySelectedText = categorySelectedText,
-                subCategorySelectedText = subCategorySelectedText,
-                image = images, context = context, orderId = orderId,
-                providerId = providerId, orderState = loanState,
-                fromFlow = fromFlow
-            )
-        }
+
+    if(categorySelectedText.isEmpty()){
+            categoryFocus.requestFocus()
+        createIssuePLViewModel.updateCategoryError(categoryErrorMessage)
+    }else if(subCategorySelectedText.isEmpty()){
+            subCategoryFocus.requestFocus()
+        createIssuePLViewModel.updateSubCategoryError(subCategoryErrorMessage)
+    } else if(images.isEmpty()){
+        createIssuePLViewModel.updateImageNotUploadedErrorMessage()
+    }else if(shortDesc.isNullOrEmpty()){
+        shortDescFocus.requestFocus()
+        createIssuePLViewModel.updateShortDescError(shortDescErrorMessage)
+    }else if(hasOnlyInteger(shortDesc.trim())){
+        shortDescFocus.requestFocus()
+        createIssuePLViewModel.updateShortDescError(properShortDescErrorMessage)
+    }else if (longDesc.isNullOrEmpty()){
+        longDescFocus.requestFocus()
+        createIssuePLViewModel.updateLongDescError(longDescErrorMessage)
+    }else if(hasOnlyInteger(longDesc.trim())){
+        longDescFocus.requestFocus()
+        createIssuePLViewModel.updateLongDescError(properLongDescErrorMessage)
+    }else{
+        createIssuePLViewModel.updateValidation(
+            shortDesc = shortDesc, longDesc = longDesc,
+            categorySelectedText = categorySelectedText,
+            subCategorySelectedText = subCategorySelectedText,
+            image = images, context = context, orderId = orderId,
+            providerId = providerId, orderState = loanState,
+            fromFlow = fromFlow
+        )
+
     }
+
+}
+
+private fun hasOnlyInteger(input: String): Boolean {
+    return input.matches(Regex("^-?\\d+$"))
 }
 
 @Composable
@@ -288,7 +374,7 @@ fun DiscriptionFeilds(
     shortDesc?.let { shortDesc ->
         InputField(
             inputText = shortDesc, top = 0.dp, start = 20.dp,
-            hint = stringResource(id = R.string.short_description),
+            hint = stringResource(id = R.string.short_description_star),
             end = 20.dp, modifier = Modifier.focusRequester(shortDescFocus),
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
@@ -307,7 +393,7 @@ fun DiscriptionFeilds(
 
     InputField(
         inputText = longDesc.orEmpty(), top = 10.dp, start = 20.dp,
-        hint = stringResource(id = R.string.long_description), end = 20.dp,
+        hint = stringResource(id = R.string.long_description_star), end = 20.dp,
         modifier = Modifier.focusRequester(longDescFocus),
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Sentences,
@@ -327,7 +413,7 @@ fun DiscriptionFeilds(
 @Composable
 fun UploadImageCard(
     imageLabel: String, imageUploaded: Boolean, imageUploading: Boolean, context: Context,
-    createIssueViewModel: CreateIssueViewModel,
+    createIssueViewModel: CreateIssueViewModel,cardDataColor : Color
 ) {
 
     var selectedImageUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
@@ -360,7 +446,9 @@ fun UploadImageCard(
     )
 
     Row (
-        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, top = 20.dp, bottom = 5.dp, end = 20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, top = 20.dp, bottom = 5.dp, end = 20.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ){
         Text(
@@ -423,7 +511,7 @@ fun UploadImageCard(
         else -> {
             // Initial state, show upload option
             Card(
-                border = BorderStroke(1.dp, Color.Gray), shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, color = cardDataColor), shape = RoundedCornerShape(8.dp),
                 elevation = 2.dp,
                 modifier = Modifier
                     .padding(start = 20.dp, end = 20.dp, top = 10.dp)
@@ -438,12 +526,12 @@ fun UploadImageCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.UploadFile, contentDescription = null,
-                            tint = Color.Gray
+                            tint = cardDataColor
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = imageLabel, style = MaterialTheme.typography.body2,
-                            color = Color.Gray
+                            color = cardDataColor
                         )
                     }
                 }

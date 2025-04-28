@@ -47,7 +47,9 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.BankD
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.BankDetailResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.DataItem
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.GstBankDetail
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.PfBankDetail
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstOfferConfirmResponse
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.pf.PfOfferConfirmResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlueTitle
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.azureBlueColor
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.bold16Text400
@@ -70,6 +72,7 @@ fun BankDetailScreen(navController: NavHostController, id: String, fromFlow: Str
     val bankDetailCollected by accountDetailViewModel.bankDetailCollected.collectAsState()
     val bankDetailResponse by accountDetailViewModel.bankDetailResponse.collectAsState()
     val gstBankDetailResponse by accountDetailViewModel.gstBankDetailResponse.collectAsState()
+    val pfBankDetailResponse by accountDetailViewModel.pfBankDetailResponse.collectAsState()
     val showInternetScreen by accountDetailViewModel.showInternetScreen.observeAsState(false)
     val showTimeOutScreen by accountDetailViewModel.showTimeOutScreen.observeAsState(false)
     val showServerIssueScreen by accountDetailViewModel.showServerIssueScreen.observeAsState(false)
@@ -102,7 +105,7 @@ fun BankDetailScreen(navController: NavHostController, id: String, fromFlow: Str
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
             if (gettingBank) {
                 AgreementAnimation(text = "", image = R.raw.processing_please_wait)
@@ -116,6 +119,7 @@ fun BankDetailScreen(navController: NavHostController, id: String, fromFlow: Str
                             onBankDetailsCollected(
                                 fromFlow = fromFlow, navController = navController,
                                 gstBankDetailResponse = gstBankDetailResponse,
+                                pfBankDetailResponse = pfBankDetailResponse,
                                 bankDetailResponse = bankDetailResponse
                             )
                         }
@@ -216,6 +220,7 @@ fun BankDetailCollecting(
 fun onBankDetailsCollected(
     fromFlow: String, navController: NavHostController,
     gstBankDetailResponse: GstOfferConfirmResponse?,
+    pfBankDetailResponse: PfOfferConfirmResponse?,
     bankDetailResponse: BankDetailResponse?
 ) {
     if (fromFlow.equals("Personal Loan", ignoreCase = true)) {
@@ -227,6 +232,20 @@ fun onBankDetailsCollected(
                             navController = navController, transactionId = transactionId,
                             statusId = 5,
                             responseItem = url, offerId = id, fromFlow = fromFlow
+                        )
+                    }
+                }
+            }
+        }
+    } else if(fromFlow.equals("Purchase Finance", ignoreCase = true)){
+        pfBankDetailResponse?.let { response ->
+            response.data?.eNACHUrlObject?.txnID?.let { transactionId ->
+                response.data?.eNACHUrlObject?.fromURL?.let { eNachUrl ->
+                    response.data.eNACHUrlObject.itemID?.let { offerId ->
+                        navigateToLoanProcessScreen(
+                            navController = navController,
+                            statusId = 15, transactionId=transactionId,
+                            responseItem = eNachUrl, offerId = offerId, fromFlow = fromFlow
                         )
                     }
                 }
@@ -272,6 +291,17 @@ fun onBankDetailsSubmit(
                     loanType = "PERSONAL_LOAN"
                 ),
                 navController
+            )
+        } else if(fromFlow.equals("Purchase Finance", ignoreCase = true)){
+            accountDetailViewModel.pfLoanEntityApproval(
+                bankDetail = PfBankDetail(
+                    accountNumber = selectedDetail.bankAccountNumber.toString(),
+                    ifscCode = selectedDetail.bankIfscCode.toString(),
+                    accountHolderName = selectedDetail.accountHolderName.toString(),
+                    id = id,
+                    loanType = "PURCHASE_FINANCE"
+                ),
+                context = context
             )
         } else {
             accountDetailViewModel.gstLoanEntityApproval(

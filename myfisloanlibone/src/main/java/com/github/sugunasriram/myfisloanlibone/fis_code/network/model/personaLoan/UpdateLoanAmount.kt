@@ -1,5 +1,6 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan
 
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.pf.PfOfferResponseItem
 import kotlinx.serialization.Serializable
 
 
@@ -24,5 +25,19 @@ data class UpdateResponseData(
     val offerResponse: OfferResponseItem? = null,
     val id: String? = null
 )
+
+@Serializable
+data class UpdateLoanAmountPfResponse(
+    val data: UpdateLoanAmountPfResponseData? = null,
+    val status: Boolean? = null,
+    val statusCode: Int? = null
+)
+
+@Serializable
+data class UpdateLoanAmountPfResponseData(
+    val offerResponse: PfOfferResponseItem? = null,
+    val id: String? = null
+)
+
 
 

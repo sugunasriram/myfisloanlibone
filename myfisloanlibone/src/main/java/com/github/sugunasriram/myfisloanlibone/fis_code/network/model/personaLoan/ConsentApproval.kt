@@ -10,6 +10,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -30,7 +31,9 @@ data class OfferResponse(
 data class Offer(
     val offer: OfferResponseItem? = null,
     @SerialName("_id")
-    val id: String? = null
+    val id: String? = null,
+    @SerialName("data")
+    val data: List<Offer>? = null
 )
 @Serializable
 data class OfferResponseItem(
@@ -180,20 +183,26 @@ object TagsSerializer : KSerializer<List<Tag>> {
     override val descriptor: SerialDescriptor =
         ListSerializer(Tag.serializer()).descriptor
 
+//    override fun serialize(encoder: Encoder, value: List<Tag>) {
+//        val map = value.associate { it.key to it.value }
+//        encoder.encodeSerializableValue(MapSerializer(String.serializer(), String.serializer()), map)
+//    }
     override fun serialize(encoder: Encoder, value: List<Tag>) {
-        val map = value.associate { it.key to it.value }
-        encoder.encodeSerializableValue(MapSerializer(String.serializer(), String.serializer()), map)
+        val map = value.associate { it.key to (it.value ?: "") }
+        encoder.encodeSerializableValue(MapSerializer(String.serializer(), String.serializer().nullable),
+            map)
     }
 
     override fun deserialize(decoder: Decoder): List<Tag> {
-        val map = decoder.decodeSerializableValue(MapSerializer(String.serializer(), String.serializer()))
-        return map.map { Tag(it.key, it.value) }
+        val map = decoder.decodeSerializableValue(MapSerializer(String.serializer(), String
+            .serializer().nullable))
+        return map.map { Tag(it.key, it.value?:"") }
     }
 }
 @Serializable
 data class Tag(
     val key: String,
-    val value: String
+    val value: String? = null
 )
 
 @Serializable

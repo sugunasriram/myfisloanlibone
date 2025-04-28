@@ -1,9 +1,12 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.views.auth
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -11,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -28,13 +32,13 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.components.MultipleColor
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.OtpView
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.RegisterText
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateSignInPage
-import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToForgotPasswordScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToOtpVerifyScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToRegisterScreen
-import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToResetPasswordScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.UserRole
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlack
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlueTitle
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appDarkTeal
+import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appGray
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appRed
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal16Text400
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal20Text500
@@ -44,6 +48,9 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.auth.OtpViewMo
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.auth.RegisterViewModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.auth.SignInViewModel
 import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.LocalConfiguration
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.DeviceInfo
+
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
@@ -55,28 +62,34 @@ fun OtpScreen(
     val requesterList = List(4) { remember { FocusRequester() } }
 
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
     val otpViewModel: OtpViewModel = viewModel()
     val signInViewModel: SignInViewModel = viewModel()
+
+
     val showInternetScreen by otpViewModel.showInternetScreen.observeAsState(false)
     val showTimeOutScreen by otpViewModel.showTimeOutScreen.observeAsState(false)
     val showServerIssueScreen by otpViewModel.showServerIssueScreen.observeAsState(false)
     val unexpectedErrorScreen by otpViewModel.unexpectedError.observeAsState(false)
 
-    val forgotPasswordOtpVerifying by otpViewModel.forgotPasswordOtpVerifying.collectAsState()
-    val forgotPasswordOtpVerified by otpViewModel.forgotPasswordOtpVerified.collectAsState()
-    val forgotResponse by signInViewModel.forgotResponse.collectAsState()
-    val passwordLoading by signInViewModel.passwordLoading.collectAsState()
-    val passwordLoaded by signInViewModel.passwordLoaded.collectAsState()
+//    val forgotPasswordOtpVerifying by otpViewModel.forgotPasswordOtpVerifying.collectAsState()
+//    val forgotPasswordOtpVerified by otpViewModel.forgotPasswordOtpVerified.collectAsState()
+//    val forgotResponse by signInViewModel.forgotResponse.collectAsState()
+//    val passwordLoading by signInViewModel.passwordLoading.collectAsState()
+//    val passwordLoaded by signInViewModel.passwordLoaded.collectAsState()
 
-    val isLoading by otpViewModel.isLoading.collectAsState()
-    val isLoadingSucess by otpViewModel.isLoadingSucess.collectAsState()
+    val isSignUpOtpLoading by otpViewModel.isSignUpOtpLoading.collectAsState()
+    val isSignUpOtpLoadingSucess by otpViewModel.isSignUpOtpLoadingSuccess.collectAsState()
+    val isLoginOtpLoading by otpViewModel.isLoginOtpLoading.collectAsState()
+    val isLoginOtpLoadingSuccess by otpViewModel.isLoginOtpLoadingSuccess.collectAsState()
     val navigationToSignIn by otpViewModel.navigationToSignIn.collectAsState()
-
 
     val registerViewModel: RegisterViewModel = viewModel()
     val resendingOtp by registerViewModel.resendingOtp.collectAsState()
     val reSendedOtp by registerViewModel.reSendedOtp.collectAsState()
     val resendOtpResponse by registerViewModel.resendOtpResponse.collectAsState()
+
+    val clipboardManager = LocalClipboardManager.current
 
 
     // Timer for OTP expiry
@@ -85,39 +98,17 @@ fun OtpScreen(
     var reSendTrigged by remember { mutableStateOf(false) }
     var reloadTimer by remember { mutableStateOf(false) }
 
+    val deviceInfo = otpViewModel.getDeviceInfo(context,configuration)
 
-    LaunchedEffect(passwordLoaded, forgotResponse, reSendedOtp, reloadTimer) {
+    LaunchedEffect(reSendTrigged, reloadTimer) {
         if (navigationToSignIn) {
-            navigateSignInPage (navController)
-        }else if (reSendTrigged && forgotResponse != null) {
-            reSendTrigged = false
-            count = 59
-            expired = false
-            while (count > 0) {
-                delay(1000)
-                count--
-            }
-            expired = true
-        } else if (!passwordLoaded && forgotResponse == null) {
-            count = 59
-            expired = false
-            while (count > 0) {
-                delay(1000)
-                count--
-            }
-            expired = true
-        } else if (!reSendedOtp && resendOtpResponse == null) {
-            count = 59
-            expired = false
-            while (count > 0) {
-                delay(1000)
-                count--
-            }
-            expired = true
-        } else if (reloadTimer) {
+            navigateSignInPage(navController)
+        } else {
             count = 59
             expired = false
             reloadTimer = false
+            reSendTrigged = false // Reset the trigger
+
             while (count > 0) {
                 delay(1000)
                 count--
@@ -136,26 +127,24 @@ fun OtpScreen(
 
         "2" -> {
             BackHandler {
-                navigateToForgotPasswordScreen(navController)
+                navigateSignInPage(navController)
             }
         }
     }
 
 
     if (!showInternetScreen && !showTimeOutScreen && !showServerIssueScreen && !unexpectedErrorScreen) {
-        if (passwordLoading || resendingOtp || isLoading || forgotPasswordOtpVerifying) {
+        if (isLoginOtpLoading || resendingOtp || isSignUpOtpLoading) {
             CenterProgress()
         } else {
-            if (isLoadingSucess || forgotPasswordOtpVerified) {
+            if (isLoginOtpLoadingSuccess || isSignUpOtpLoadingSucess) {
                 when (fromScreen) {
                     "1" -> {
-                        navigateToOtpVerifyScreen(navController)
+                        navigateToOtpVerifyScreen(navController, fromScreen)
                     }
 
                     "2" -> {
-                        number?.let { mobileNumber ->
-                            navigateToResetPasswordScreen(navController, mobileNumber)
-                        }
+                        navigateToOtpVerifyScreen(navController, fromScreen)
                     }
                 }
             } else {
@@ -164,13 +153,8 @@ fun OtpScreen(
                     buttonText = stringResource(id = R.string.submit),
                     onBackClick = {
                         when (fromScreen) {
-                            "1" -> {
-                                navigateToRegisterScreen(navController)
-                            }
-
-                            "2" -> {
-                                navigateToForgotPasswordScreen(navController)
-                            }
+                            "1" -> navigateToRegisterScreen(navController)
+                            "2" -> navigateSignInPage(navController)
                         }
                     },
                     onClick = {
@@ -185,9 +169,9 @@ fun OtpScreen(
                                     if (reSendTrigged) {
                                         resendOtpResponse?.orderId?.let { otpId ->
                                             val otp = textList.joinToString("") { it.value.text }
-                                            otpViewModel.otpValidation(
-                                                enteredOtp = otp, orderId =  otpId,
-                                                context =  context,navController = navController
+                                            otpViewModel.signUpOtpValidation(
+                                                enteredOtp = otp, orderId = otpId,
+                                                context = context, navController = navController
                                             )
                                         }
                                         expired = false
@@ -195,7 +179,7 @@ fun OtpScreen(
                                     } else {
                                         orderId?.let { id ->
                                             val otp = textList.joinToString("") { it.value.text }
-                                            otpViewModel.otpValidation(
+                                            otpViewModel.signUpOtpValidation(
                                                 enteredOtp = otp, orderId = id, context = context,
                                                 navController = navController
                                             )
@@ -204,10 +188,25 @@ fun OtpScreen(
                                 }
 
                                 "2" -> {
-                                    orderId?.let { id ->
-                                        val otp = textList.joinToString("") { it.value.text }
-                                        otpViewModel.forgotPasswordOtpValidation(
-                                            otp = otp, orderId = orderId, context = context
+                                    if (reSendTrigged) {
+                                        submitOTP(
+                                            orderId,
+                                            textList,
+                                            otpViewModel,
+                                            context,
+                                            navController,
+                                            deviceInfo
+                                        )
+                                        expired = false
+
+                                    } else {
+                                        submitOTP(
+                                            orderId,
+                                            textList,
+                                            otpViewModel,
+                                            context,
+                                            navController,
+                                            deviceInfo
                                         )
                                     }
                                 }
@@ -237,7 +236,24 @@ fun OtpScreen(
                         )
                     }
 
-                    OtpView(textList = textList, requestList = requesterList)
+                    OtpView(textList = textList, requestList = requesterList, pastedEvent =  {
+                        val annotatedString = clipboardManager.getText()
+                        annotatedString?.let {
+                            extractOtp(it.text)?.let {
+                                textList.forEachIndexed { key, textView ->
+                                    textView.value = TextFieldValue("${annotatedString.text[key]}")
+                                }
+                                submitOTP(
+                                    orderId,
+                                    textList,
+                                    otpViewModel,
+                                    context,
+                                    navController,
+                                    deviceInfo
+                                )
+                            }
+                        }
+                    })
 
                     RegisterText(
                         text = if (expired) stringResource(id = R.string.time_expired) else "$count seconds",
@@ -251,17 +267,19 @@ fun OtpScreen(
                                 textColor = appBlueTitle, resendOtpColor = appRed,
                             ) {
                                 if (expired) {
-                                    orderId?.let { orderId ->
-                                        registerViewModel.authResendOTP(
-                                            orderId = orderId, context = context,
-                                            navController = navController
+                                    orderId?.let { id ->
+                                        val otp = textList.joinToString("") { it.value.text }
+                                        otpViewModel.loginOtpValidation(
+                                            enteredOtp = otp, orderId = id, context = context,
+                                            navController = navController,
+                                            deviceInfo=deviceInfo
                                         )
                                         reSendTrigged = true
                                         expired = false
                                         reloadTimer = true
-
                                     }
                                 } else {
+
                                     CommonMethods().toastMessage(
                                         context = context, toastMsg = "Wait For $count Seconds"
                                     )
@@ -272,24 +290,22 @@ fun OtpScreen(
                         "2" -> {
                             MultipleColorText(
                                 text = stringResource(id = R.string.resend_otp),
-                                textColor = appBlueTitle, resendOtpColor = appRed,
+                                textColor = if (count > 0) appGray else appBlueTitle,
+                                resendOtpColor = if (count > 0) appGray else appRed,
                             ) {
                                 if (expired) {
-                                    number?.let { mobileNumber ->
-                                        signInViewModel.forgotPassword(
-                                            mobileNumber = mobileNumber,
-                                            countryCode = context.getString(R.string.country_code),
-                                            context = context
-                                        )
-                                        reSendTrigged = true
-                                        expired = false
-                                        reloadTimer = true
-
-                                    }
+                                    signInViewModel.getUserRole(
+                                        number.toString(), context.getString(R.string.country_code),
+                                        context
+                                    )
+                                    reSendTrigged = true
+                                    expired = false
+                                    reloadTimer = true
                                 } else {
+                                    if(count>0){
                                     CommonMethods().toastMessage(
                                         context = context, toastMsg = "Wait For $count Seconds"
-                                    )
+                                    )}
                                 }
                             }
                         }
@@ -304,6 +320,29 @@ fun OtpScreen(
             unexpectedErrorScreen = unexpectedErrorScreen
         )
     }
+}
+
+private fun submitOTP(
+    orderId: String?,
+    textList: List<MutableState<TextFieldValue>>,
+    otpViewModel: OtpViewModel,
+    context: Context,
+    navController: NavHostController,
+    deviceInfo: DeviceInfo
+) {
+    orderId?.let { id ->
+        val otp = textList.joinToString("") { it.value.text }
+        otpViewModel.loginOtpValidation(
+            enteredOtp = otp, orderId = id, context = context,
+            navController = navController,
+            deviceInfo = deviceInfo
+        )
+    }
+}
+
+fun extractOtp(input: String): String? {
+    val regex = Regex("\\b\\d{4}\\b")
+    return regex.find(input)?.value
 }
 
 @Preview

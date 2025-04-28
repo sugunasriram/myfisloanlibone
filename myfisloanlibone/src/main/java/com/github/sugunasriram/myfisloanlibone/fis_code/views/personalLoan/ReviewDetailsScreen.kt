@@ -2,6 +2,8 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.BottomSheetScaffold
 import androidx.compose.material.BottomSheetScaffoldState
 import androidx.compose.material.ExperimentalMaterialApi
@@ -27,10 +30,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.AgreementAnimation
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CurvedPrimaryButtonFull
@@ -117,7 +125,13 @@ fun ReviewDetailView(
                     BottomSheetContent(
                         navController = navController, scaffoldState = scaffoldState,
                         coroutineScope = coroutineScope, purpose = purpose,
-                        registerViewModel = registerViewModel, fromFlow = fromFlow
+                        registerViewModel = registerViewModel, fromFlow = fromFlow,
+                        onclick = {
+                            coroutineScope.launch {
+                                scaffoldState.bottomSheetState.collapse()
+                            }
+                            registerViewModel.onCheckBoxDetailChanged(true)
+                        }
                     )
                 },
                 sheetPeekHeight = 0.dp
@@ -134,7 +148,13 @@ fun ReviewDetailView(
                         goBack(navController = navController, fromFlow = fromFlow)
                     },
                     onCheckBoxChange = { isChecked ->
-                        registerViewModel.onCheckBoxDetailChanged(isChecked)
+                        if (isChecked) {
+                            coroutineScope.launch {
+                                scaffoldState.bottomSheetState.expand()
+                            }
+                        } else {
+                            registerViewModel.onCheckBoxDetailChanged(false)
+                        }
                     },
                     onClick = {
                         onReviewClick(
@@ -197,14 +217,14 @@ fun PersonalDetailsCard(profile: Profile) {
     NumberFullWidthCard(cardColor = lightishGray) {
         profile.firstName?.let { firstName ->
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.first_name), textValue = firstName,
+                textHeader = stringResource(id = R.string.firstname), textValue = firstName,
                 textColorHeader = softSteelGray, textColorValue = appBlack, start = 40.dp,
                 top = 10.dp, bottom = 10.dp
             )
         }
         profile.lastName?.let { lastName ->
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.last_name), textValue = lastName,
+                textHeader = stringResource(id = R.string.lastname), textValue = lastName,
                 textColorHeader = softSteelGray, textColorValue = appBlack, start = 40.dp,
                 top = 10.dp, bottom = 10.dp
             )
@@ -219,35 +239,38 @@ fun PersonalDetailsCard(profile: Profile) {
         profile.gender?.let { gender ->
             val formattedGender = gender.replaceFirstChar { it.uppercase() }
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.gender), textValue = formattedGender, top = 10.dp,
+                textHeader = stringResource(id = R.string.gender_), textValue = formattedGender,
+                top = 10.dp,
                 textColorHeader = softSteelGray, textColorValue = appBlack, start = 40.dp,
                 bottom = 10.dp
             )
         }
         profile.panNumber?.let { panNumber ->
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.pan), textValue = panNumber, top = 10.dp,
+                textHeader = stringResource(id = R.string.pan_), textValue = panNumber, top = 10.dp,
                 textColorHeader = softSteelGray, textColorValue = appBlack, start = 40.dp,
                 bottom = 10.dp
             )
         }
         profile.mobileNumber?.let { mobileNumber ->
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.contact_number), textValue = mobileNumber,
+                textHeader = stringResource(id = R.string.contact_number_), textValue =
+                mobileNumber,
                 textColorHeader = softSteelGray, textColorValue = appBlack, start = 40.dp,
                 top = 10.dp, bottom = 10.dp
             )
         }
         profile.email?.let { email ->
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.email_id), textValue = email, top = 10.dp,
+                textHeader = stringResource(id = R.string.email_id_), textValue = email, top = 10
+                    .dp,
                 textColorHeader = softSteelGray, textColorValue = appBlack, start = 40.dp,
                 bottom = 10.dp
             )
         }
         profile.officialEmail?.let { officialEmail ->
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.official_email_id),
+                textHeader = stringResource(id = R.string.official_email_id_),
                 textValue = officialEmail, textColorHeader = softSteelGray,
                 textColorValue = appBlack, start = 40.dp, top = 10.dp, bottom = 10.dp
             )
@@ -276,14 +299,15 @@ fun EmploymentDetailsCard(profile: Profile, purpose: String) {
         }
         profile.companyName?.let { companyName ->
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.company_name), textValue = companyName,
+                textHeader = stringResource(id = R.string.invoice_company_name), textValue =
+                companyName,
                 textColorHeader = softSteelGray, textColorValue = appBlack, start = 40.dp,
                 top = 10.dp, bottom = 10.dp
             )
         }
         profile.address1?.let { address1 ->
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.address_line_1), textValue = address1,
+                textHeader = stringResource(id = R.string.official_address), textValue = address1,
                 textColorHeader = softSteelGray, textColorValue = appBlack, start = 40.dp,
                 top = 10.dp, bottom = 10.dp
             )
@@ -297,7 +321,7 @@ fun EmploymentDetailsCard(profile: Profile, purpose: String) {
         }
         profile.address2?.let { address2 ->
             OnlyReadAbleText(
-                textHeader = stringResource(id = R.string.address_line_2), textValue = address2,
+                textHeader = stringResource(id = R.string.permanent_address), textValue = address2,
                 textColorHeader = softSteelGray, textColorValue = appBlack, start = 40.dp,
                 top = 10.dp, bottom = 10.dp
             )
@@ -336,7 +360,7 @@ fun OrderDetailText() {
 @Composable
 fun BottomSheetContent(
     navController: NavHostController, scaffoldState: BottomSheetScaffoldState, fromFlow: String,
-    coroutineScope: CoroutineScope, purpose: String, registerViewModel: RegisterViewModel,
+    coroutineScope: CoroutineScope, purpose: String, registerViewModel: RegisterViewModel, onclick : () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -361,25 +385,64 @@ fun BottomSheetContent(
             text = stringResource(id = R.string.bottom_sheet_header), style = bold20Text100,
             textAlign = TextAlign.Center, color = appBlack, modifier = Modifier.fillMaxWidth()
         )
-        Text(
-            text = stringResource(id = R.string.bottom_sheet_body),
-            style = normal12Text400, textAlign = TextAlign.Justify, color = appGray,
-            modifier = Modifier.padding(start = 70.dp, end = 70.dp, top = 10.dp, bottom = 10.dp)
-        )
+//        Text(
+//            text = stringResource(id = R.string.bottom_sheet_body),
+//            style = normal12Text400, textAlign = TextAlign.Justify, color = appGray,
+//            modifier = Modifier.padding(start = 70.dp, end = 70.dp, top = 10.dp, bottom = 10.dp)
+//        )
+        ConsentText()
         CurvedPrimaryButtonFull(
             text = stringResource(id = R.string.provide_consent).uppercase(),
             modifier = Modifier.padding(start = 30.dp, end = 30.dp, bottom = 20.dp, top = 40.dp)
         ) {
-            coroutineScope.launch {
-                scaffoldState.bottomSheetState.collapse()
-            }
-            navigateToLoanProcessScreen(
-                navController = navController, transactionId="Sugu",
-                        statusId = 8, responseItem = purpose,
-                offerId = "1234", fromFlow = fromFlow
+            onclick.invoke()
+        }
+    }
+}
+
+@Composable
+fun ConsentText() {
+    val context = LocalContext.current
+    val fullText = stringResource(id = R.string.bottom_sheet_body)
+    val linkText = "DMI Terms &amp; Conditions"
+    val url = "https://www.dmifinance.in/loan-application-undertaking/"
+
+    val annotatedString = buildAnnotatedString {
+        val startIndex = fullText.indexOf(linkText)
+        val endIndex = startIndex + linkText.length
+
+        append(fullText)
+
+        if (startIndex != -1) {
+            addStyle(
+                style = SpanStyle(
+                    color = Color.Blue, // Make it look like a hyperlink
+                    textDecoration = TextDecoration.Underline
+                ),
+                start = startIndex,
+                end = endIndex
+            )
+            addStringAnnotation(
+                tag = "URL",
+                annotation = url,
+                start = startIndex,
+                end = endIndex
             )
         }
     }
+
+    ClickableText(
+        text = annotatedString,
+        style = normal12Text400.copy(textAlign = TextAlign.Justify, color = appGray),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
+        onClick = { offset ->
+            annotatedString.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                .firstOrNull()?.let {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it.item))
+                    context.startActivity(intent)
+                }
+        }
+    )
 }
 
 fun onReviewClick(
@@ -403,7 +466,7 @@ fun onReviewClick(
 
     } else {
         CommonMethods().toastMessage(
-            context = context, toastMsg = context.getString(R.string.select_checkbox_to_proceed_further)
+            context = context, toastMsg = context.getString(R.string.please_agree_to_terms)
         )
     }
 }

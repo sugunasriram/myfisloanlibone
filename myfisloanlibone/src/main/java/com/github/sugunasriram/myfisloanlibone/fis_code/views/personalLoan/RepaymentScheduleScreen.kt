@@ -188,7 +188,7 @@ fun RepaymentScheduleScreen(navController: NavHostController, orderId: String, f
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         errorHandling -> {
             PrePaymentStatusScreen(
                 navController = navController,
@@ -417,7 +417,7 @@ fun LoanSheet(
                         it.tags.let { tags ->
                             tags.forEach { tag ->
                                 if (tag.key.contains("cool_off", ignoreCase = true)) {
-                                    coolOffPeriodDate = tag.value
+                                    coolOffPeriodDate = tag.value?:""
                                     return@forEach // Exit the loop after processing the first matching tag
                                 }
                             }
@@ -430,7 +430,7 @@ fun LoanSheet(
                     quoteBreakUp?.let {
                         it.title?.let { title ->
                             it.value?.let { description ->
-                                if (title.contains("PRINCIPAL", ignoreCase = true)) {
+                                if (title.equals("PRINCIPAL", ignoreCase = true)) {
                                     principal = description
                                     return@forEach // Exit the loop after processing the first matching tag
                                 }
@@ -506,7 +506,7 @@ fun CompleteLoanDetails(
     ApplicantDetails(loanDetails)
 
     // Loan Details
-    LoanApplicationDetails(loanDetails)
+    LoanApplicationDetails(loanDetails, context)
 
     // Loan Summary
     LoanSummary(loanDetails)
@@ -1095,13 +1095,15 @@ fun convertUTCToLocalDateTime(utcDateTime: String): String {
     val remainingTimeStr = CommonMethods().timeBufferString(remainingTime)
 
     val dateTimeStr = zonedDateTime.format(formatter)
-    val formatedStr = "$remainingTimeStr\n($dateTimeStr)"
+    //Sugu2
+//    val formatedStr = "$remainingTimeStr\n($dateTimeStr)"
+    val formatedStr = "Till - $dateTimeStr"
 
     return formatedStr
 }
 
 @Composable
-fun LoanApplicationDetails(loanDetails: OfferResponseItem) {
+fun LoanApplicationDetails(loanDetails: OfferResponseItem,context: Context) {
     FullWidthRoundShapedCard(onClick = { }, cardColor = lightishGray) {
         loanDetails.itemTags?.forEach { itemTags ->
             itemTags?.let {
@@ -1116,18 +1118,30 @@ fun LoanApplicationDetails(loanDetails: OfferResponseItem) {
                                 if (tag.key.contains("cool_off", ignoreCase = true) ||
                                     tag.key.contains("cool off", ignoreCase = true)
                                 ) {
-                                    convertUTCToLocalDateTime(tag.value)
+                                    convertUTCToLocalDateTime(tag.value?:"")
                                 } else {
                                     tag.value
                                 }
-
-                            OnlyReadAbleText(
-                                textHeader = newTitle,
-                                textValue = displayValue,
-                                style = normal14Text400,
-                                textColorValue = bokaraGrayColor,
-                                textColorHeader = hintTextColor
-                            )
+                            if (tag.key.contains("LINK", ignoreCase = true)) {
+                                tag.value?.let { url ->
+                                    OnlyClickAbleText(
+                                        textHeader = tag.key,
+                                        textValue = url,
+                                        textColorHeader = hintTextColor,
+                                        style = normal14Text400,
+                                        textColorValue = azureBlueColor,
+                                        onClick = { CommonMethods().openLink(context, url) }
+                                    )
+                                }
+                            } else {
+                                OnlyReadAbleText(
+                                    textHeader = newTitle,
+                                    textValue = displayValue?:"",
+                                    style = normal14Text400,
+                                    textColorValue = bokaraGrayColor,
+                                    textColorHeader = hintTextColor
+                                )
+                            }
                         }
                     }
                 }
@@ -1135,6 +1149,7 @@ fun LoanApplicationDetails(loanDetails: OfferResponseItem) {
         }
     }
 }
+
 
 @Composable
 fun RepaymentBottomCommon(
@@ -1399,7 +1414,7 @@ fun RepaymentBottomPart(
         loanDetails.fulfillments?.forEach { fulfilment ->
             fulfilment?.state?.let { state ->
                 state.descriptor?.name?.let { loanStatus ->
-                    if (!loanStatus.contains("Closed", ignoreCase = true)) {
+                    if (!loanStatus.contains("Closed", ignoreCase = true) && loanStatus == "Loan Disbursed") {
                         CurvedPrimaryButtonMultipleInRow(
                             text = stringResource(id = R.string.repayment).uppercase(),
                             style = normal16Text400,
@@ -1684,15 +1699,18 @@ fun PrePartPaymentResponseHandle(
         paymentStatusText = "Repayment of ₹$prePartPaymentAmount successfully processed"
     else if (selectedOption == "FORECLOSURE" || selectedOption == "MISSED_EMI_PAYMENT")
         paymentStatusText = "Repayment of $amount_to_be_paid successfully processed"
-    updatedLoanAgreement?.data?.let {
+    updatedLoanAgreement?.data?.let agreement@{
         it.updatedObject?.let { updatedLoan ->
-            updatedLoan.payments?.get(0)?.let { payment ->
+            updatedLoan.payments?.forEach {
+                it?.let { payment ->
                 payment.url?.let { paymentUrl ->
                     navigateToPrePaymentWebViewScreen(
                         navController = navController, orderId = orderId, headerText = paymentUrl,
                         status = paymentStatusText, fromFlow = fromFlow
                     )
+                    return@agreement
                 }
+            }
             }
         }
     }

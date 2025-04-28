@@ -8,8 +8,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonTransformingSerializer
 import kotlinx.serialization.json.buildJsonObject
 
-
-
 @Serializable
 data class Bank(
     @Serializable(with = BankDataDeserializer::class)

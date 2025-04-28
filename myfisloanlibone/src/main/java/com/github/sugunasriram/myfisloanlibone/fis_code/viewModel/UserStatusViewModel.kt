@@ -59,7 +59,7 @@ class UserStatusViewModel : BaseViewModel() {
     private val _navigationToSignup = MutableStateFlow(false)
     val navigationToSignIn: StateFlow<Boolean> = _navigationToSignup
 
-    fun getUserStaus(loanType: String, context: Context) {
+    fun getUserStatus(loanType: String, context: Context) {
         _checkingStatus.value = true
         viewModelScope.launch(Dispatchers.IO) {
             handleGstUserStatus(loanType = loanType, context = context)

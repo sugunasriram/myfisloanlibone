@@ -17,7 +17,9 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.BankD
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.BankList
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.GstBankDetail
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.IFSCResponse
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.PfBankDetail
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstOfferConfirmResponse
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.pf.PfOfferConfirmResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.BaseViewModel
 import io.ktor.client.features.ResponseException
@@ -75,8 +77,9 @@ class AccountDetailViewModel : BaseViewModel() {
     val accountNumber: LiveData<String> = _accountNumber
 
     fun onAccountNumberChanged(accountNumber: String) {
+        val sanitizedInput = accountNumber.replace(Regex("[^0-9]"), "")
         if (accountNumber.length <= 18) {
-            _accountNumber.value = accountNumber
+            _accountNumber.value = sanitizedInput
             updateGeneralError(null)
         }
     }
@@ -228,7 +231,7 @@ class AccountDetailViewModel : BaseViewModel() {
             focusAccountHolder.requestFocus()
             requestKeyboard()
         } else if (accountHolder.trim().length < 4) {
-            updateAccountHolderError(context.getString(R.string.please_enter_valid_name))
+            updateAccountHolderError(context.getString(R.string.enter_valid_account_number))
             focusAccountHolder.requestFocus()
             requestKeyboard()
         } else if (accountSelectedText.trim().isEmpty()) {
@@ -440,7 +443,7 @@ class AccountDetailViewModel : BaseViewModel() {
             focusAccountHolder.requestFocus()
             requestKeyboard()
         } else if (accountHolder.trim().length < 4) {
-            updateAccountHolderError(context.getString(R.string.please_enter_valid_name))
+            updateAccountHolderError(context.getString(R.string.enter_valid_account_number))
             focusAccountHolder.requestFocus()
             requestKeyboard()
         } else if (accountNumber.trim().isEmpty()) {
@@ -576,5 +579,55 @@ class AccountDetailViewModel : BaseViewModel() {
             _gettingBank.value = false
         }
     }
+
+
+    //Purchase Finance
+
+
+    private val _pfBankDetailResponse = MutableStateFlow<PfOfferConfirmResponse?>(null)
+    val pfBankDetailResponse: StateFlow<PfOfferConfirmResponse?> = _pfBankDetailResponse
+
+    fun pfLoanEntityApproval(bankDetail: PfBankDetail, context: Context) {
+        _bankDetailCollecting.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            handlePfLoanEntityApproval(bankDetail, context)
+        }
+    }
+
+    private suspend fun handlePfLoanEntityApproval(bankDetail: PfBankDetail, context: Context,
+                                                    checkForAccessToken: Boolean = true) {
+        kotlin.runCatching {
+            ApiRepository.pfLoanEntityApproval(bankDetail)
+        }.onSuccess { response ->
+            response?.let {
+                handlePfLoanEntityApprovalSuccess(response, context)
+            }
+        }.onFailure { error ->
+            if (checkForAccessToken &&
+                error is ResponseException &&
+                error.response.status.value == 401
+            ) {
+                //Get Access Token using RefreshToken
+                if (handleAuthGetAccessTokenApi()) {
+                    handlePfLoanEntityApproval(bankDetail, context, false)
+                } else {
+                    _navigationToSignIn.value = true
+                }
+            } else {
+                handleFailure(error = error, context =  context)
+            }
+        }
+    }
+
+    private suspend fun handlePfLoanEntityApprovalSuccess(
+        response: PfOfferConfirmResponse, context: Context
+    ) {
+        withContext(Dispatchers.Main) {
+            _bankDetailCollecting.value = false
+            _bankDetailCollected.value = true
+            _pfBankDetailResponse.value = response
+        }
+    }
+
 
 }

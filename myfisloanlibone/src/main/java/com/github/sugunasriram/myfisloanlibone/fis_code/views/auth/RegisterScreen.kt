@@ -81,6 +81,8 @@ fun RegisterScreen(navController: NavHostController) {
     val registerViewModel: RegisterViewModel = viewModel()
     val firstName: String? by registerViewModel.firstName.observeAsState("")
     val lastName: String? by registerViewModel.lastName.observeAsState("")
+    val gender: String? by registerViewModel.gender.observeAsState("")
+    val employment: String? by registerViewModel.employment.observeAsState("")
     val emailId: String? by registerViewModel.personalEmailId.observeAsState("")
     val officialEmailId: String? by registerViewModel.officialEmailId.observeAsState("")
     val companyName: String? by registerViewModel.companyName.observeAsState("")
@@ -90,8 +92,8 @@ fun RegisterScreen(navController: NavHostController) {
     val panNumber: String? by registerViewModel.panNumber.observeAsState("")
     val checkboxValue: Boolean? by registerViewModel.checkBox.observeAsState(false)
     val password: String? by registerViewModel.password.observeAsState("")
-    val address1: String? by registerViewModel.address1.observeAsState("")
-    val address2: String? by registerViewModel.address2.observeAsState("")
+    val address1: String? by registerViewModel.officialAddress.observeAsState("")
+    val address2: String? by registerViewModel.permanentAddress.observeAsState("")
     val city1: String? by registerViewModel.city1.observeAsState("")
     val pincode1: String? by registerViewModel.pinCode1.observeAsState("")
     val city2: String? by registerViewModel.city2.observeAsState("")
@@ -111,8 +113,8 @@ fun RegisterScreen(navController: NavHostController) {
     val companyNameError: String? by registerViewModel.companyNameError.observeAsState("")
     val genderError: String? by registerViewModel.genderError.observeAsState("")
     val employmentError: String? by registerViewModel.employmentError.observeAsState("")
-    val addressError: String? by registerViewModel.addressError.observeAsState("")
-    val address2Error: String? by registerViewModel.address2Error.observeAsState("")
+    val addressError: String? by registerViewModel.officialAddressError.observeAsState("")
+    val address2Error: String? by registerViewModel.permanentAddressError.observeAsState("")
     val cityError1: String? by registerViewModel.cityError1.observeAsState("")
     val pincodeError1: String? by registerViewModel.pinCodeError1.observeAsState("")
     val cityError2: String? by registerViewModel.cityError2.observeAsState("")
@@ -165,7 +167,7 @@ fun RegisterScreen(navController: NavHostController) {
                 Register(
                     checkboxValue = checkboxValue, navController = navController, role = role,
                     registerViewModel = registerViewModel, mobileNumber = mobileNumber,
-                    firstName = firstName, lastName = lastName, emailId = emailId,
+                    firstName = firstName, lastName = lastName, emailId = emailId, gender = gender, employmentType = employment,
                     officialEmailId = officialEmailId, password = password, dob = dob,
                     companyName = companyName, panNumber = panNumber, udyamNumber = udyamNumber,
                     pincode1 = pincode1, pincode2 = pincode2, address1 = address1, income = income,
@@ -204,6 +206,7 @@ fun RegisterScreen(navController: NavHostController) {
 fun Register(
     checkboxValue: Boolean?, navController: NavHostController, registerViewModel: RegisterViewModel,
     mobileNumber: String?, firstName: String?, lastName: String?, emailId: String?, dob: String?,
+    gender : String?, employmentType : String?,
     officialEmailId: String?, password: String?, companyName: String?, panNumber: String?,
     udyamNumber: String, pincode1: String?, pincode2: String?, address1: String?, role: String,
     address2: String?, firstNameFocus: FocusRequester, lastNameFocus: FocusRequester,
@@ -221,7 +224,7 @@ fun Register(
     cityError1: String?, addressError: String?, city2: String?, pincodeError2: String?,
     cityFocus1: FocusRequester, cityError2: String?, address2Error: String?
 ) {
-    var genderSelectedText by remember { mutableStateOf("") }
+    var genderSelectedText by remember { mutableStateOf(gender ?: "") }
     var genderExpand by remember { mutableStateOf(false) }
     val genderList = listOf(
         stringResource(id = R.string.male), stringResource(id = R.string.female),
@@ -233,7 +236,7 @@ fun Register(
         registerViewModel.onGenderChanged(selectedText)
     }
 
-    var employmentSelectedText by remember { mutableStateOf("") }
+    var employmentSelectedText by remember { mutableStateOf(employmentType ?: "") }
     var employement by remember { mutableStateOf(false) }
     val emplyTypeList = listOf(
         stringResource(id = R.string.salaried), stringResource(id = R.string.self_employment)
@@ -387,7 +390,7 @@ fun AddressFeilds(
     address2Error: String?,context: Context
 ) {
     InputField(
-        inputText = address1, hint = stringResource(id = R.string.address_one), top = 10.dp,
+        inputText = address1, hint = stringResource(id = R.string.official_address_with_star), top = 10.dp,
         modifier = Modifier.focusRequester(addressFocus),
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next,
@@ -420,13 +423,13 @@ fun AddressFeilds(
             ),
             keyboardActions = KeyboardActions(onNext = { address2Focus.requestFocus() }),
             onValueChange = {
-                registerViewModel.onPinCodeChanged1(it,context = context)
-                registerViewModel.updatePinCodeErrorOne(null)
+                registerViewModel.onPinCodeChanged2(it,context = context)
+                registerViewModel.updatePinCodeError2(null)
             },
             error = pincodeError2
         )
         InputField(
-            inputText = nearCityResponse?.city, hint = stringResource(id = R.string.city), start = 5.dp,
+            inputText = nearCityResponse?.cities?.get(0), hint = stringResource(id = R.string.city), start = 5.dp,
             end = 0.dp, top = 10.dp, enable = false, readOnly = city2?.isEmpty() == true,
             modifier = Modifier
                 .weight(1f)
@@ -435,13 +438,13 @@ fun AddressFeilds(
                 imeAction = ImeAction.Next, keyboardType = KeyboardType.Text
             ),
             keyboardActions = KeyboardActions(onNext = { address2Focus.requestFocus() }),
-            onValueChange = { registerViewModel.onCityChanged1(it) },
+            onValueChange = { registerViewModel.onCityChanged2(it) },
             error = cityError2,
         )
     }
 
     InputField(
-        inputText = address2, hint = stringResource(id = R.string.address_two), top = 10.dp,
+        inputText = address2, hint = stringResource(id = R.string.permanent_address_with_star), top = 10.dp,
         modifier = Modifier.focusRequester(address2Focus),
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done,
@@ -480,13 +483,13 @@ fun CityPincodeFeilds(
             ),
             keyboardActions = KeyboardActions(onNext = { cityFocus.requestFocus() }),
             onValueChange = {
-                registerViewModel.onPinCodeChanged(it, context = context)
-                registerViewModel.updatePinCodeError(null)
+                registerViewModel.onPinCodeChanged1(it, context = context)
+                registerViewModel.updatePinCodeError1(null)
             },
             error = pincodeError1
         )
         InputField(
-            inputText = pincodeResponse?.city, hint = stringResource(id = R.string.city),
+            inputText = pincodeResponse?.cities?.get(0), hint = stringResource(id = R.string.city),
             start = 5.dp, end = 0.dp, top = 10.dp, enable = false,
             readOnly = city1?.isEmpty() == true,
             modifier = Modifier
@@ -702,80 +705,79 @@ fun onRegisterClicked(
                                             checkboxValue.let { checkboxValue ->
                                                 panNumber?.let { panNumber ->
 //                                                    udyamNumber?.let { udyamNumber ->
-                                                        pincode1?.let { pincode1 ->
-                                                            pincode2?.let { pincode2 ->
-                                                                address1?.let { address1 ->
-                                                                    address2?.let { address2 ->
-                                                                        registerViewModel.otpButtonValidation(
+                                                    pincode1?.let { pincode1 ->
+                                                        pincode2?.let { pincode2 ->
+                                                            address1?.let { address1 ->
+                                                                address2?.let { address2 ->
+                                                                    registerViewModel.otpButtonValidation(
+                                                                        firstName = firstName,
+                                                                        lastName = lastName,
+                                                                        emailId = emailId,
+                                                                        officialEmailId = officialEmailId,
+                                                                        password = password,
+                                                                        mobileNumber = mobileNumber,
+                                                                        dob = dob,
+                                                                        gender = gender,
+                                                                        employmentType = employmentType,
+                                                                        companyName = companyName,
+                                                                        panNumber = panNumber.uppercase(),
+                                                                        checkboxValue = checkboxValue,
+                                                                        firstNameFocus = firstNameFocus,
+                                                                        lastNameFocus = lastNameFocus,
+                                                                        emailIdFocus = emailIdFocus,
+                                                                        officialEmailIdFocus = officialEmailIdFocus,
+                                                                        focusPassword = focusPassword,
+                                                                        mobileNumberFocus = mobileNumberFocus,
+                                                                        dobFocus = dobFocus,
+                                                                        genderFocus = genderFocus,
+                                                                        employmentFocus = employmentFocus,
+                                                                        companyNameFocus = companyNameFocus,
+                                                                        panNumberFocus = panNumberFocus,
+                                                                        context = context,
+//                                                                            udyamNumber = udyamNumber?.uppercase() ?: "",
+                                                                        udyamNumber = udyamNumber?.takeIf { it.isNotEmpty() }?.uppercase() ?: "",
+                                                                        udyamNumberFocus = udyamNumberFocus,
+                                                                        pinCode = pincode1,
+                                                                        pinCodeFocus = pincodeFocus,
+                                                                        pinCode1 = pincode2,
+                                                                        pincodeFocus1 = pincodeFocus1,
+                                                                        address = address1,
+                                                                        adressFocus = addressFocus,
+                                                                        address2 = address2,
+                                                                        adress2Focus = address2Focus,
+                                                                        profile = Profile(
                                                                             firstName = firstName,
                                                                             lastName = lastName,
-                                                                            emailId = emailId,
-                                                                            officialEmailId = officialEmailId,
                                                                             password = password,
-                                                                            mobileNumber = mobileNumber,
                                                                             dob = dob,
-                                                                            gender = gender,
-                                                                            employmentType = employmentType,
-                                                                            companyName = companyName,
+                                                                            mobileNumber = mobileNumber,
+                                                                            countryCode = countryCode,
                                                                             panNumber = panNumber.uppercase(),
-                                                                            checkboxValue = checkboxValue,
-                                                                            firstNameFocus = firstNameFocus,
-                                                                            lastNameFocus = lastNameFocus,
-                                                                            emailIdFocus = emailIdFocus,
-                                                                            officialEmailIdFocus = officialEmailIdFocus,
-                                                                            focusPassword = focusPassword,
-                                                                            mobileNumberFocus = mobileNumberFocus,
-                                                                            dobFocus = dobFocus,
-                                                                            genderFocus = genderFocus,
-                                                                            employmentFocus = employmentFocus,
-                                                                            companyNameFocus = companyNameFocus,
-                                                                            panNumberFocus = panNumberFocus,
-                                                                            context = context,
-//                                                                            udyamNumber = udyamNumber?.uppercase() ?: "",
-                                                                            udyamNumber = udyamNumber?.takeIf { it.isNotEmpty() }?.uppercase() ?: "",
-                                                                            udyamNumberFocus = udyamNumberFocus,
-                                                                            pinCode = pincode1,
-                                                                            pinCodeFocus = pincodeFocus,
-                                                                            pinCode1 = pincode2,
-                                                                            pincodeFocus1 = pincodeFocus1,
-                                                                            address = address1,
-                                                                            adressFocus = addressFocus,
+                                                                            email = emailId,
+                                                                            income = income,
+                                                                            pincode1 = pincode1,
+                                                                            pincode2 = pincode2,
+                                                                            role = role,
+                                                                            gender = gender,
+                                                                            if (employmentType.equals(
+                                                                                    "salaried"
+                                                                                )
+                                                                            ) employmentType else "selfEmployed",
                                                                             address2 = address2,
-                                                                            adress2Focus = address2Focus,
-                                                                            profile = Profile(
-                                                                                firstName = firstName,
-                                                                                lastName = lastName,
-                                                                                password = password,
-                                                                                dob = dob,
-                                                                                mobileNumber = mobileNumber,
-                                                                                countryCode = countryCode,
-                                                                                panNumber = panNumber.uppercase(),
-                                                                                email = emailId,
-                                                                                income = income,
-                                                                                pincode1 = pincode1,
-                                                                                pincode2 = pincode2,
-                                                                                role = role,
-                                                                                gender = gender,
-                                                                                if (employmentType.equals(
-                                                                                        "salaried"
-                                                                                    )
-                                                                                ) employmentType else "selfEmployed",
-                                                                                address2 = address2,
-                                                                                city1 = pincodeResponse?.city
-                                                                                    ?: "",
-                                                                                city2 = nearCityResponse?.city
-                                                                                    ?: "",
-                                                                                address1 = address1,
-                                                                                companyName = companyName,
-                                                                                udyamNumber = udyamNumber?.takeIf { it.isNotEmpty() }?.uppercase(),
-                                                                                state1 = pincodeResponse?.state
-                                                                                    ?: "",
-                                                                                state2 = nearCityResponse?.state
-                                                                                    ?: "",
-                                                                                officialEmail = officialEmailId
-                                                                            )
+                                                                            city1 = pincodeResponse?.cities?.get(0)
+                                                                                ?: "",
+                                                                            city2 = nearCityResponse?.cities?.get(0)
+                                                                                ?: "",
+                                                                            address1 = address1,
+                                                                            companyName = companyName,
+                                                                            udyamNumber = udyamNumber?.takeIf { it.isNotEmpty() }?.uppercase(),
+                                                                            state1 = pincodeResponse?.state
+                                                                                ?: "",
+                                                                            state2 = nearCityResponse?.state
+                                                                                ?: "",
+                                                                            officialEmail = officialEmailId
                                                                         )
-                                                                    }
+                                                                    )
                                                                 }
                                                             }
                                                         }
@@ -783,6 +785,7 @@ fun onRegisterClicked(
                                                 }
                                             }
                                         }
+                                    }
 //                                    }
                                 }
                             }
@@ -816,7 +819,9 @@ fun DatePickerFeild(
     dob: String, dobFocus: FocusRequester, genderFocus: FocusRequester, context: Context,
     registerViewModel: RegisterViewModel, dobError: String,
 ) {
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    //For ABFL & BFL
+//    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
     val (selectedDate, setSelectedDate) = remember { mutableStateOf(dob) }
 
     //To check person's age should be greater than 18

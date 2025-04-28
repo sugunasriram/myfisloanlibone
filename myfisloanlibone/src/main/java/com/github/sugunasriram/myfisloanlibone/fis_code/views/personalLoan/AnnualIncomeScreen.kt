@@ -42,9 +42,11 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CenterProgress
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CenteredMoneyImage
@@ -75,7 +77,7 @@ import kotlin.math.roundToInt
 @SuppressLint("SuspiciousIndentation")
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun AnnualIncomeScreen(navController: NavHostController,fromFlow:String) {
+fun AnnualIncomeScreen(navController: NavHostController, fromFlow: String) {
     val context = LocalContext.current
 
     val annualIncomeViewModel: AnnualIncomeViewModel = viewModel()
@@ -93,6 +95,8 @@ fun AnnualIncomeScreen(navController: NavHostController,fromFlow:String) {
     val unAuthorizedUser by annualIncomeViewModel.unAuthorizedUser.observeAsState(false)
 
     val navigationToSignIn by annualIncomeViewModel.navigationToSignIn.collectAsState()
+
+//    var selectedComponent by remember { mutableStateOf(SelectedComponent.Slider.item) }
 
     val focusManager = LocalFocusManager.current
     val (incomeFocus) = FocusRequester.createRefs()
@@ -130,21 +134,28 @@ fun AnnualIncomeScreen(navController: NavHostController,fromFlow:String) {
         val initialIncome = incomeWithoutSymbol
 //        val newPosition = ((initialIncome - 30000) * 100f / 1970000).coerceIn(0f, 100f)
 
+//        if (selectedComponent == SelectedComponent.Slider.item) {
         val roundedValue = (initialIncome / stepSize).roundToInt() * stepSize.toFloat()
+        annualIncomeViewModel.updateSliderPosition(roundedValue, context)
+//        }
 
 //        annualIncomeViewModel.updateSliderPosition(newPosition,context)
-        annualIncomeViewModel.updateSliderPosition(roundedValue,context)
+
         onDispose { }
     }
 
     BackHandler {
-        navigateToLoanProcessScreen(navController, transactionId="Sugu", 1, context.getString(R
-            .string
-            .loan), "1234",fromFlow = "Personal Loan")
+        navigateToLoanProcessScreen(
+            navController, transactionId = "Sugu", 1, context.getString(
+                R
+                    .string
+                    .loan
+            ), "1234", fromFlow = "Personal Loan"
+        )
     }
 
     when {
-        navigationToSignIn -> navigateSignInPage (navController)
+        navigationToSignIn -> navigateSignInPage(navController)
         showInternetScreen -> CommonMethods().ShowInternetErrorScreen(navController)
         showTimeOutScreen -> CommonMethods().ShowTimeOutErrorScreen(navController)
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
@@ -171,6 +182,10 @@ fun AnnualIncomeScreen(navController: NavHostController,fromFlow:String) {
                     ),
                     keyboardActions = KeyboardActions(onDone = {}),
                     onTextChanged = { newText ->
+
+//                        if(selectedComponent == SelectedComponent.Slider.item){
+//                            selectedComponent = SelectedComponent.TextView.item
+//                        }
                         annualIncomeViewModel.onIncomeChanged(context = context, newText.text)
                         if (newText.text.replace("₹", "").replace(",", "").isEmpty()) {
                             annualIncomeViewModel.updateGeneralError(null)
@@ -184,7 +199,7 @@ fun AnnualIncomeScreen(navController: NavHostController,fromFlow:String) {
                         .fillMaxWidth()
                         .padding(start = 30.dp, end = 30.dp)
                         .focusRequester(incomeFocus),
-                    readOnly = true
+                    readOnly = false
                 )
 
 
@@ -285,18 +300,27 @@ fun AnnualIncomeScreen(navController: NavHostController,fromFlow:String) {
                         }
                     }
                 }
-                if (updatingIncome){
+                if (updatingIncome) {
                     CenterProgress(top = 50.dp)
                 } else {
-                    if (updatedIncome){
-                        navigateToReviewDetailsScreen(navController, selectedPurpose,fromFlow)
+                    if (updatedIncome) {
+                        navigateToReviewDetailsScreen(navController, selectedPurpose, fromFlow)
                     } else {
                         CurvedPrimaryButtonFull(
                             text = stringResource(id = R.string.next),
-                            modifier = Modifier.padding(start = 30.dp, end = 30.dp, bottom = 20.dp, top = 50.dp),
-                            backgroundColor = if(selectedPurpose.isEmpty() || selectedPurpose.equals("purpose",ignoreCase = true)) disableColor else appBlue,
+                            modifier = Modifier.padding(
+                                start = 30.dp,
+                                end = 30.dp,
+                                bottom = 20.dp,
+                                top = 50.dp
+                            ),
+                            backgroundColor = if (selectedPurpose.isEmpty() || selectedPurpose.equals(
+                                    "purpose",
+                                    ignoreCase = true
+                                )
+                            ) disableColor else appBlue,
                         ) {
-                            annualIncomeViewModel.onNextClicked(context,selectedPurpose,income)
+                            annualIncomeViewModel.onNextClicked(context, selectedPurpose, income)
                         }
                     }
                 }
@@ -306,3 +330,14 @@ fun AnnualIncomeScreen(navController: NavHostController,fromFlow:String) {
 }
 
 
+//sealed class SelectedComponent(val item : String){
+//    object Slider :  SelectedComponent("Slider")
+//    object TextView : SelectedComponent("TextView")
+//}
+
+@Preview
+@Composable
+private fun AnnualIncomeScreenPreview() {
+    AnnualIncomeScreen(rememberNavController(), "Personal Loan")
+
+}

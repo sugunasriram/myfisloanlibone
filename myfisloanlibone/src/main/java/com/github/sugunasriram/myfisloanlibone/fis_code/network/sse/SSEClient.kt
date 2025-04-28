@@ -1,6 +1,9 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.network.sse
 
 import android.util.Log
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiPaths
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository
+import com.github.sugunasriram.myfisloanlibone.fis_code.utils.storage.TokenManager
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.features.HttpTimeout
@@ -17,14 +20,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import okio.FileNotFoundException
 import java.io.BufferedReader
 import java.io.EOFException
 import java.io.InputStreamReader
+import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
-class SSEClient(private val url: String, private val token: String, private val scope: CoroutineScope) {
+class SSEClient(private val url: String, private val scope: CoroutineScope) {
 
     private val client = HttpClient(Android) {
         install(HttpTimeout) {
@@ -61,21 +67,42 @@ class SSEClient(private val url: String, private val token: String, private val 
             var attempt = 0
             while (isListening) {
                 try {
+                    // Fetch access token and prepare the authorization header
+                    val accessToken = TokenManager.read("accessToken")
+                    val token = "Bearer $accessToken"
+
                     val connection = URL(url).openConnection() as HttpsURLConnection
                     connection.requestMethod = "GET"
                     connection.setRequestProperty("Accept", "text/event-stream")
                     connection.setRequestProperty("Authorization", token)
+                    connection.connect()
 
-                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
-                     attempt = 0 // Reset attempt on successful connection
+                    Log.d("SSELOGS","BearerToken : ${token}")
 
-                    while (isListening) {
-                        val line = reader.readLine() ?: break
-                        if (line.startsWith("data: ")) {
-                            _events.value = line.substring(6)
+
+                    val responseCode = connection.responseCode
+                    if(responseCode == 401){
+                        if(ApiRepository.handleAuthGetAccessTokenApi()){
+                                connection.disconnect()
+                                stopListening()
+                                startListening()
                         }
+                    }else if (responseCode == HttpURLConnection.HTTP_OK) {
+                        val  reader = BufferedReader(InputStreamReader(connection.inputStream))
+
+                        attempt = 0 // Reset attempt on successful connection
+
+                        while (isListening) {
+                            val line = reader.readLine() ?: break
+                            if (line.startsWith("data: ")) {
+                                _events.value = line.substring(6)
+                            }
+                        }
+
+                        reader.close()
+                        connection.disconnect()
                     }
-                    reader.close()
+
                 } catch (e: EOFException) {
                     Log.w("SSEClient", "EOFException occurred: ${e.message}")
                     handleReconnection(attempt++)
@@ -108,11 +135,11 @@ class SSEClient(private val url: String, private val token: String, private val 
     companion object {
         private lateinit var instance: SSEClient
 
-        fun getInstance(url: String, token: String, scope: CoroutineScope): SSEClient {
+        fun getInstance(url: String, scope: CoroutineScope): SSEClient {
             if (this::instance.isInitialized) {
                 return instance
             } else {
-                instance = SSEClient(url, token, scope)
+                instance = SSEClient(url, scope)
                 return instance
             }
         }

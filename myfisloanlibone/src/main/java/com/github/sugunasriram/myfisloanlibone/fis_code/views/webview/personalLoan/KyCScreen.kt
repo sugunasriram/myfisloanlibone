@@ -13,14 +13,13 @@ import android.net.http.SslError
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.Message
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
-import android.webkit.JsPromptResult
-import android.webkit.JsResult
 import android.webkit.PermissionRequest
 import android.webkit.SslErrorHandler
 import android.webkit.ValueCallback
@@ -40,6 +39,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,9 +62,12 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.components.WebViewTopBar
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToAnimationLoader
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToFormRejectedScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiPaths
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository.handleAuthGetAccessTokenApi
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEData
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEViewModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
@@ -77,21 +80,31 @@ private val json1 = Json {
 
 private var filePathCallbackFn: ValueCallback<Array<Uri>>? = null
 private var uploadMessage: ValueCallback<Uri>? = null
-var redirectionSet = false
 var mGeoLocationRequestOrigin: String? = null
 var mGeoLocationCallback: GeolocationPermissions.Callback? = null
 
-
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun WebKycScreenPreview() {
 //    val url="https://uat-api.refo.dev/pss/enach/form/9277121d-8413-4dba-ad74-efc3b8c531b2?sessionId=fiD32d21ip%2BqtbOyGMerSFzIKPBDpzwqXBZfch%2Fd%2Fr%2BiGQnrKBNfM22PZGZi8901NxQKC4qlU8wVqC3I8j76gQyBmtiy8iUzYIIIpagvfg7bPhy7RAtZvMp5WYh2jG0j%2F3rVkpgii3RAXwPhTLB4MT%2FtaJgf&redirectUrl=self"
 //    var url = "https://ilpuat.finfotech.co.in/lms/ondc/kycuri?transactionId=d3d1c832-2848-51cf-bafa-9f53ca8c7985&status=1"
-    var url = "https://ilpuat.finfotech.co.in/lms/ondc/kycuri?transactionId=1329fefc-86e5-5f4b-b60e-6d32a7674ef0&status=2"
-    WebKycScreen(
-        navController = rememberNavController(), transactionId="transactionId",
-        url = url, id = "id", fromFlow = "Personal Loan"
-    ){}
+//    var url = "https://ilpuat.finfotech.co.in/lms/ondc/kycuri?transactionId=1329fefc-86e5-5f4b-b60e-6d32a7674ef0&status=2"
+//    var url = "file:///android_asset/eKycLastPage.html"
+//    var url = "https://upsell.abfldirect.com/kyc/selfie?account_id=9d61f0949525523c8a51173b6f66dcbf&z_request_id=ONA202503214c722e3b02ca4cf&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZDYxZjA5NDk1MjU1MjNjOGE1MTE3M2I2ZjY2ZGNiZiIsImF1ZCI6InVzciIsImlhdCI6MTc0MjU1OTU1MywiZXhwIjoxNzQ1MTUxNTUzLCJpc3MiOiJ3aWRnZXRfc2RrX2JhY2tlbmQifQ.10ic_goWA-LY7HWF4WKKRQ5uaTnnfypy6aoKAI5JbJw"
+        var url="https://www.google.com"
+    //    WebKycScreen(
+//        navController = rememberNavController(), transactionId="transactionId",
+//        url = url, id = "id", fromFlow = "Personal Loan"
+//    ){}
+
+    ProceedWithKYCProcess(
+        navController = rememberNavController(),
+        context = LocalContext.current,
+        url = url,
+        id = "id",
+        pageContent = {  },
+        isSelfScrollable = false,
+    )
 }
 
 
@@ -104,7 +117,7 @@ fun WebKycScreen(
 ) {
     var lateNavigate = false
     val sseViewModel: SSEViewModel = viewModel()
-    val sseEvents by sseViewModel.events.collectAsState()
+    val sseEvents by sseViewModel.events.collectAsState(initial = "")
     var errorMsg by remember { mutableStateOf<String?>(null) }
     val errorTitle = stringResource(id = R.string.kyc_failed)
 
@@ -130,35 +143,47 @@ fun WebKycScreen(
         }
     }
 
+
     ProceedWithKYCProcess(
         navController = navController, context = LocalContext.current, url = url, id = id,
         pageContent = pageContent, isSelfScrollable = isSelfScrollable,
     )
 
     if (sseEvents.isNotEmpty()) {
-        handler.removeCallbacksAndMessages(null)
-        try {
-            val sseData = json1.decodeFromString<SSEData>(sseEvents)
-            val sseTransactionId = sseData.data?.data?.txnId ;//tested
-            Log.d("Kyc:", "transactionId :["+transactionId + "] " +
-                    "sseTransactionId:["+ sseTransactionId)
+        Log.d("KYC Web Screen", "SSE entered ")
 
+        handler.removeCallbacksAndMessages(null)
+        val sseData: SSEData? = try {
+            json1.decodeFromString<SSEData>(sseEvents)
+        } catch (e: Exception) {
+            Log.e("SSEParsingError", "Error parsing SSE data", e)
+            null
+        }
+
+
+        if (sseData != null) {
+
+        val sseTransactionId = sseData.data?.data?.txnId;//tested
+        Log.d(
+            "Kyc:", "transactionId :[" + transactionId + "] " +
+                    "sseTransactionId:[" + sseTransactionId
+        )
             sseData.data?.data?.type.let { type ->
-                if ( transactionId == sseTransactionId && (type == "ACTION" || type == "INFO")) {
+                if (transactionId == sseTransactionId && (type == "ACTION" || type == "INFO")) {
                     Log.d("KyCScreen", "At SSE not empty - Sugu")
                     lateNavigate = true
 
                     //Check if Form Rejected or Pending
-                    if (sseData.data?.data?.data?.error != null){
-                        Log.d("KyCScreen", "Error :"+sseData.data?.data?.data?.error?.message)
+                    if (sseData.data?.data?.data?.error != null) {
+                        Log.d("KyCScreen", "Error :" + sseData.data?.data?.data?.error?.message)
                         errorMsg = sseData.data?.data?.data?.error?.message
 
                         navigateToFormRejectedScreen(
                             navController = navController,
                             errorTitle = errorTitle,
-                            fromFlow = fromFlow, errorMsg=errorMsg
+                            fromFlow = fromFlow, errorMsg = errorMsg
                         )
-                    }else {
+                    } else {
                         navigateToAnimationLoader(
                             navController = navController, transactionId = transactionId, id = id,
                             fromFlow = fromFlow
@@ -166,10 +191,10 @@ fun WebKycScreen(
                     }
                 }
             }
-        } catch (e: Exception) {
-            Log.e("SSEParsingError", "Error parsing SSE data", e)
-        }
+         }
+
     }
+
 }
 
 
@@ -237,25 +262,21 @@ fun ProceedWithKYCProcess(
                             settings.setSupportMultipleWindows(true)
                             settings.javaScriptCanOpenWindowsAutomatically = true
                             settings.mediaPlaybackRequiresUserGesture = false
-
-
-
-//                            settings.setNeedInitialFocus(true)
-
-                            WebView.setWebContentsDebuggingEnabled(true);
-
+                            settings.safeBrowsingEnabled = true
+//                            WebView.setWebContentsDebuggingEnabled(true);
                             settings.cacheMode = WebSettings.LOAD_DEFAULT
 
                             // Enable hardware acceleration for better performance
                             setLayerType(View.LAYER_TYPE_HARDWARE, null)
                             setRendererPriorityPolicy(RENDERER_PRIORITY_BOUND, false)
 
-
                             layoutParams = ViewGroup.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT
                             )
 
+                            isFocusable = true
+                            isFocusableInTouchMode = true
 
                             webViewClient = object : WebViewClient() {
                                 override fun shouldOverrideUrlLoading(
@@ -271,16 +292,15 @@ fun ProceedWithKYCProcess(
 
                                             else -> {
                                                 view?.loadUrl(it)
-                                                return true
+                                                return false
                                             }
                                         }
                                     }
-                                    return false
+                                    return true
                                 }
 
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     super.onPageFinished(view, url)
-//                                    evaluateJavascript("notifyAppFinished();", null)
                                 }
 
                                 override fun onReceivedError(
@@ -333,16 +353,32 @@ fun ProceedWithKYCProcess(
                                 fun openFileChooser(uploadMsg: ValueCallback<Uri>) {
                                     openFileChooser(uploadMsg, "*/*")
                                 }
+
                             }
+                            val webSettings = webViewClient?.let { it1 -> settings }
+                            if (webSettings != null) {
+                                webSettings.javaScriptEnabled = true
 
-
+                                webSettings.cacheMode = WebSettings.LOAD_DEFAULT
+                                webSettings.setDomStorageEnabled(true)
+                                webSettings.setAllowFileAccess(true)
+                                webSettings.setAllowContentAccess(true)
+                                webSettings.setAllowFileAccessFromFileURLs(true)
+                                webSettings.setAllowUniversalAccessFromFileURLs(true)
+                                webSettings.setJavaScriptEnabled(true)
+                                webSettings.setSupportMultipleWindows(true)
+                                webSettings.setJavaScriptCanOpenWindowsAutomatically(true)
+                                webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                webSettings.safeBrowsingEnabled = true
+                            }
                         }
                     },
                     update = { webView ->
+
+
                         webView.settings.setGeolocationEnabled(true)
                         webView.settings.setJavaScriptEnabled(true)
                         //Sugu - need to test with other lender, commented for Lint
-                        webView.settings.javaScriptEnabled = true
                         webView.settings.loadsImagesAutomatically = true
                         webView.settings.domStorageEnabled = true
                         webView.settings.allowFileAccess = true
@@ -352,28 +388,19 @@ fun ProceedWithKYCProcess(
                         webView.settings.allowUniversalAccessFromFileURLs = true
                         webView.settings.setSupportZoom(true)
 
-                        webView.settings.builtInZoomControls = true
-                        webView.settings.displayZoomControls = false
-
                         webView.settings.loadWithOverviewMode = true
                         webView.settings.useWideViewPort = true
                         webView.settings.setSupportMultipleWindows(true)
                         webView.settings.javaScriptCanOpenWindowsAutomatically = true
-                            webView.settings.safeBrowsingEnabled = true
-
 
                         // Apply layout parameters to the WebView
                         webView.layoutParams = ViewGroup.MarginLayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT
                         )
-
-//                        webView.settings.setNeedInitialFocus(true)
-
-
                         webView.settings.cacheMode = WebSettings.LOAD_DEFAULT
-
-
+                        webView.isFocusable = true
+                        webView.isFocusableInTouchMode = true
                         webView.webChromeClient = object : WebChromeClient() {
                             override fun onPermissionRequest(request: PermissionRequest) {
                                 activity.runOnUiThread {
@@ -489,33 +516,6 @@ fun ProceedWithKYCProcess(
                                     .show()
                             }
 
-                            override fun onJsAlert(
-                                view: WebView?,
-                                url: String?,
-                                message: String?,
-                                result: JsResult?
-                            ): Boolean {
-                                return super.onJsAlert(view, url, message, result)
-                            }
-
-                            override fun onJsPrompt(
-                                view: WebView?,
-                                url: String?,
-                                message: String?,
-                                defaultValue: String?,
-                                result: JsPromptResult?
-                            ): Boolean {
-                                return super.onJsPrompt(view, url, message, defaultValue, result)
-                            }
-
-                            override fun onJsConfirm(
-                                view: WebView?,
-                                url: String?,
-                                message: String?,
-                                result: JsResult?
-                            ): Boolean {
-                                return super.onJsConfirm(view, url, message, result)
-                            }
 
                             override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
                                 if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
@@ -556,14 +556,118 @@ fun ProceedWithKYCProcess(
                                 openFileChooser(uploadMsg, "*/*")
                             }
 
+                            override fun onCreateWindow(
+                                view: WebView?,
+                                isDialog: Boolean,
+                                isUserGesture: Boolean,
+                                resultMsg: Message?
+                            ): Boolean {
+                                val newWebView = view?.context?.let { WebView(it) }
+                                if (newWebView != null) {
+
+                                    newWebView.webViewClient = object : WebViewClient() {
+                                        override fun shouldOverrideUrlLoading(
+                                            view: WebView,
+                                            request: WebResourceRequest
+                                        ): Boolean {
+                                            val url = request.url.toString()
+                                            if (view != null && url != null) {
+                                                view.loadUrl(url)
+                                                return false
+                                            } else {
+                                                return super.shouldOverrideUrlLoading(view, request)
+                                            }
+                                        }
+
+                                        override fun shouldOverrideUrlLoading(
+                                            view: WebView?,
+                                            url: String?
+                                        ): Boolean {
+                                            if (view != null && url != null) {
+                                                view.loadUrl(url)
+                                                return false
+                                            }
+                                            return true
+                                        }
+
+                                    }
+                                }
+
+
+                                val webSettings = newWebView?.settings
+                                if (webSettings != null) {
+                                    webSettings.javaScriptEnabled = true
+                                    webSettings.domStorageEnabled = true
+                                    webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                    webSettings.setAllowFileAccess(true)
+                                    webSettings.setAllowContentAccess(true)
+                                    webSettings.setAllowFileAccessFromFileURLs(true)
+                                    webSettings.setAllowUniversalAccessFromFileURLs(true)
+                                    webSettings.setSupportMultipleWindows(true)
+                                    webSettings.setJavaScriptCanOpenWindowsAutomatically(true)
+                                    webSettings.setGeolocationEnabled(true)
+                                    webSettings.loadsImagesAutomatically = true
+                                    webSettings.loadWithOverviewMode = true
+                                    webSettings.javaScriptCanOpenWindowsAutomatically = true
+                                    webSettings.cacheMode = WebSettings.LOAD_DEFAULT
+                                }
+
+                                val webViewSettings = view?.settings
+                                if (webViewSettings != null) {
+                                    webViewSettings.javaScriptEnabled = true
+                                    webViewSettings.domStorageEnabled = true
+                                    webViewSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                    webViewSettings.setAllowFileAccess(true)
+                                    webViewSettings.setAllowContentAccess(true)
+                                    webViewSettings.setAllowFileAccessFromFileURLs(true)
+                                    webViewSettings.setAllowUniversalAccessFromFileURLs(true)
+                                    webViewSettings.setSupportMultipleWindows(true)
+                                    webViewSettings.setJavaScriptCanOpenWindowsAutomatically(true)
+                                    webViewSettings.setGeolocationEnabled(true)
+                                    webViewSettings.loadsImagesAutomatically = true
+                                    webViewSettings.loadWithOverviewMode = true
+                                    webViewSettings.useWideViewPort = true
+                                    webViewSettings.javaScriptCanOpenWindowsAutomatically = true
+                                    webViewSettings.cacheMode = WebSettings.LOAD_DEFAULT
+                                }
+//                                WebView.setWebContentsDebuggingEnabled(true)
+
+                                // Apply layout parameters to the WebView
+                                newWebView?.layoutParams = ViewGroup.MarginLayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+
+                                newWebView?.isFocusable = true
+                                newWebView?.isFocusableInTouchMode = true
+
+                                val cookieManager = CookieManager.getInstance()
+
+                                // Enable cookies
+                                cookieManager.setAcceptCookie(true)
+
+                                // If you want to allow third-party cookies (optional)
+                                // Pass the WebView instance directly
+                                cookieManager.setAcceptThirdPartyCookies(newWebView, true)
+                                cookieManager.setAcceptThirdPartyCookies(view, true)
+                                newWebView?.setWebChromeClient(this);
+                                view?.addView(newWebView)
+                                val transport = resultMsg?.obj as? WebView.WebViewTransport
+                                transport?.webView = newWebView
+                                resultMsg?.sendToTarget()
+
+                                return true
+                            }
+
+
+                            override fun onCloseWindow(window: WebView?) {
+                                super.onCloseWindow(window)
+
+                                (window?.parent as? ViewGroup)?.removeView(window)
+                                window?.destroy()
+                            }
                         }
 
-                        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-                        //New
-                        webView.setRendererPriorityPolicy(RENDERER_PRIORITY_BOUND, false)
-                        webView.settings.mediaPlaybackRequiresUserGesture = false
-
-//                        webView.clearCache(true)
                         val cookieManager = CookieManager.getInstance()
 
                         // Enable cookies
@@ -571,8 +675,7 @@ fun ProceedWithKYCProcess(
 
                         // If you want to allow third-party cookies (optional)
                             // Pass the WebView instance directly
-                            cookieManager.setAcceptThirdPartyCookies(webView, true)
-
+                        cookieManager.setAcceptThirdPartyCookies(webView, true)
 
                         webView.loadUrl(url)
                     }

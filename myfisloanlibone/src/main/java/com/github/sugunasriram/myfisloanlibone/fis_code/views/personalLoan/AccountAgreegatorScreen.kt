@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +65,7 @@ fun AccountAgreegatorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(start = 15.dp, end = 15.dp, top = 10.dp),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Fit,
         )
         StartImageWithText()
         StartImageWithText(text = stringResource(id = R.string.no_branch_visits))
@@ -98,6 +99,7 @@ fun onGoBackClick(navController: NavHostController, fromFlow: String, loanPurpos
     }
 }
 
+//@Preview(widthDp = 352, heightDp = 737)
 @Preview
 @Composable
 fun AccountAgreegatorScreenPreview() {

@@ -2,7 +2,6 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan
 
 import android.annotation.SuppressLint
 import android.content.Context
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,9 +40,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.github.sugunasriram.myfisloanlibone.R
-import com.github.sugunasriram.myfisloanlibone.fis_code.components.AgreementAnimation
-import com.github.sugunasriram.myfisloanlibone.fis_code.components.AnimationLoader
-import com.github.sugunasriram.myfisloanlibone.fis_code.components.CenterProgress
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CenteredMoneyImage
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CurvedPrimaryButtonFull
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.FixedTopBottomScreen
@@ -51,7 +47,6 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.components.LoaderAnimati
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.RegisterText
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.SpaceBetweenText
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.TextInputLayout
-import com.github.sugunasriram.myfisloanlibone.fis_code.components.TextInputLayoutForTenure
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateSignInPage
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanOffersListDetailScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstCatalog
@@ -98,7 +93,7 @@ fun EditLoanRequestScreen(
 
 
     val initialLoanAmount = amount.toDoubleOrNull() ?: 0.0
-    val initialLoanBeginAmount = minAmount.toDoubleOrNull()?:0.0
+    val initialLoanBeginAmount = minAmount.toDoubleOrNull() ?: 0.0
 //    val initialLoanEndAmount = initialLoanAmount + 10000.0
     val initialLoanEndAmount = initialLoanAmount
 
@@ -154,7 +149,7 @@ fun EditLoanRequestScreen(
 
 
         // Convert the clampedIncome back to a string and pass it to the ViewModel
-        editLoanRequestViewModel.onLoanAmountChanged(context, clampedIncome.toString())
+        editLoanRequestViewModel.onLoanAmountChanged(clampedIncome.toString())
     }
 
     val onTenureSliderChange: (Float) -> Unit = { tenureValue ->
@@ -171,7 +166,7 @@ fun EditLoanRequestScreen(
         val clampedTenure = newTenure.coerceIn(initialLoanBeginTenure, initialLoanEndTenure)
 
         // Convert the clampedIncome back to a string and pass it to the ViewModel
-        editLoanRequestViewModel.onloanTenureChanged(context, clampedTenure.toString())
+        editLoanRequestViewModel.onLoanTenureChanged(clampedTenure.toString())
     }
 
     // Function to update slider position when Loan Amount changes
@@ -201,13 +196,13 @@ fun EditLoanRequestScreen(
     }
 
     when {
-        navigationToSignIn -> navigateSignInPage (navController)
+        navigationToSignIn -> navigateSignInPage(navController)
         showInternetScreen -> CommonMethods().ShowInternetErrorScreen(navController)
         showTimeOutScreen -> CommonMethods().ShowTimeOutErrorScreen(navController)
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
             EditLoanRequestView(
                 isEditProcess = isEditProcess, navController = navController,
@@ -215,9 +210,8 @@ fun EditLoanRequestScreen(
                 initialLoanBeginAmount = minAmount.toDouble(), context = context,
                 loanSlider = loanSlider, initialLoanEndAmount = initialLoanEndAmount,
                 onLoanSliderChange = onLoanSliderChange, numberOfSteps = numberOfSteps,
-                initialLoanAmount = initialLoanAmount, tenureSlider = tenureSlider,
-                loanTenure = loanTenure, initialLoanTenure = initialLoanTenure,
-                onTenureSliderChange = onTenureSliderChange, generalError = generalError,
+                initialLoanAmount = initialLoanAmount,
+                loanTenure = loanTenure, generalError = generalError,
                 coroutineScope = coroutineScope, snackState = snackState, fromFlow = fromFlow,
                 isEdited = isEdited, id = id, editLoanResponse = editLoanResponse,
                 gstOfferConfirmResponse = gstOfferConfirmResponse, offerId = offerId
@@ -233,9 +227,7 @@ fun EditLoanRequestView(
     loanAmount: Double, editLoanRequestViewModel: EditLoanRequestViewModel,
     initialLoanBeginAmount: Double, context: Context, loanSlider: Float,
     initialLoanEndAmount: Double, onLoanSliderChange: (Float) -> Unit,
-    numberOfSteps: Int, initialLoanAmount: Double, tenureSlider: Float, loanTenure: Int,
-
-    initialLoanTenure: Int, onTenureSliderChange: (Float) -> Unit,
+    numberOfSteps: Int, initialLoanAmount: Double, loanTenure: Int,
     generalError: String?, coroutineScope: CoroutineScope,
     snackState: SnackbarHostState, fromFlow: String,
     isEdited: Boolean, id: String, editLoanResponse: UpdateResponse?,
@@ -247,9 +239,8 @@ fun EditLoanRequestView(
 
     if (isEditProcess) {
         //Sugu
-//        CenterProgress()
         LoaderAnimation(
-            text = stringResource(id = R.string.please_wait_processing),
+            text = stringResource(id = R.string.processing_please_wait),
             updatedText = "",
             image = image
         )
@@ -265,11 +256,10 @@ fun EditLoanRequestView(
                 bottom = 20.dp, top = 20.dp,
                 style = normal30Text700
             )
-            var formattedLoanAmount: String
-            if (loanAmount > 0.0) {
-                formattedLoanAmount = CommonMethods().formatIndianDoubleCurrency(loanAmount)
+            val formattedLoanAmount: String = if (loanAmount > 0.0) {
+                CommonMethods().formatIndianDoubleCurrency(loanAmount)
             } else {
-                formattedLoanAmount = CommonMethods().formatIndianCurrency(0)
+                CommonMethods().formatIndianCurrency(0)
             }
 
             TextInputLayout(
@@ -286,7 +276,6 @@ fun EditLoanRequestView(
 
                 onTextChanged = { newText ->
                     editLoanRequestViewModel.onLoanAmountChanged(
-                        context = context,
                         newText.text
                     )
                 },
@@ -325,7 +314,6 @@ fun EditLoanRequestView(
 
             val formattedEndLoanAmount = CommonMethods().formatIndianCurrency(
                 initialLoanAmount.toInt()
-                        //Sugu + 10000
             )
             SpaceBetweenText(
                 text = formattedBeginLoanAmount,
@@ -333,78 +321,19 @@ fun EditLoanRequestView(
                 start = 45.dp, end = 45.dp, top = 0.dp
             )
 
-            /* Sugu - as its Not Editable
-            RegisterText(
-                text = stringResource(id = R.string.edit_loan_tenure),
-                textColor = appBlueTitle,
-                bottom = 20.dp, top = 20.dp,
-                style = normal30Text700
-            )
-
-            var formattedTenure = ""
-            if (loanTenure > 0) {
-                formattedTenure = "$loanTenure months"
-            } else {
-                formattedTenure = "0 months"
-            }
-
-            TextInputLayoutForTenure(
-                text = if (loanTenure > 0) "$loanTenure months" else "0 months",
-
-                onTextChanged = { newText ->
-                    val numericValue = newText.substringBefore(" ").toIntOrNull() ?: 0
-                    editLoanRequestViewModel.onloanTenureChanged(
-                        context,
-                        numericValue.toString()
-                    )
-                },
-                hintText = "Months",
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Next,
-                    keyboardType = KeyboardType.Number
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 30.dp, end = 30.dp),
-                readOnly = true
-            )
-
-            Slider(
-                value = tenureSlider,
-                onValueChange = onTenureSliderChange,
-                valueRange = 0f..100f,
-                colors = SliderDefaults.colors(
-                    thumbColor = appBlue,
-                    activeTrackColor = slideActiveColor,
-                    inactiveTrackColor = customBlueColor,
-                ),
-                modifier = Modifier.padding(start = 30.dp, end = 30.dp, top = 10.dp)
-            )
-
-//                val formattedBeginLoanTenure = (initialLoanTenure ?: 10) + 0
-            val formattedBeginLoanTenure =
-                if ((initialLoanTenure - 10) < 1) 2 else (initialLoanTenure - 10)
-
-            val formattedEndLoanTenure = initialLoanTenure + 10
-            SpaceBetweenText(
-                text = formattedBeginLoanTenure.toString() + " " + stringResource(id = R.string.months),
-                value = formattedEndLoanTenure.toString() + " " + stringResource(id = R.string.months),
-                start = 45.dp, end = 45.dp, top = 0.dp
-            )
-
-            */
             if (!generalError.isNullOrEmpty()) {
                 showSnackError(coroutineScope, snackState, generalError)
                 SnackbarHost(hostState = snackState) {
-                    generalError.let {
-                        CustomSnackBar(message = it, containerColor = Color.Red)
-                    }
+                    CustomSnackBar(message = generalError, containerColor = Color.Red)
                 }
             }
             if (isEdited) {
                 navigateBasedSuccess(
-                    editLoanResponse = editLoanResponse, navController = navController,
-                    fromFlow = fromFlow, id = id, gstOfferConfirmResponse = gstOfferConfirmResponse
+                    gstOfferConfirmResponse = gstOfferConfirmResponse,
+                    editLoanResponse = editLoanResponse,
+                    navController = navController,
+                    fromFlow = fromFlow,
+                    id = id,
                 )
             } else {
                 button1Visible = true
@@ -531,7 +460,7 @@ fun TwoButtonsInRow(
                     .padding(start = 2.dp, end = 10.dp, top = 10.dp)
                     .weight(1f)
             ) {
-                if (fromFlow.equals("Personal Loan")) {
+                if (fromFlow == "Personal Loan") {
                     val updatedLoanTenure = loanTenure.lowercase().replace(" months", "")
                     editLoanRequestViewModel.checkValid(
                         loanAmount, loanTenure, context, UpdateLoanAmountBody(
@@ -539,8 +468,9 @@ fun TwoButtonsInRow(
                             requestAmount = loanAmount,
                             id = id,
                             offerId = offerId,
-                            loanType = "PERSONAL_LOAN"
-                        )
+                            loanType = "PERSONAL_LOAN",
+                        ),
+                        fromFlow = fromFlow
                     )
                 } else {
                     editLoanRequestViewModel.gstInitiateOffer(
@@ -556,6 +486,14 @@ fun TwoButtonsInRow(
 @Preview
 @Composable
 fun EditLoanRequestScreenPreview() {
-    EditLoanRequestScreen(rememberNavController(), "", "662000.90", "2000","5", "123456789", "Personal")
+    EditLoanRequestScreen(
+        rememberNavController(),
+        "",
+        "662000.90",
+        "2000",
+        "5",
+        "123456789",
+        "Personal"
+    )
 }
 

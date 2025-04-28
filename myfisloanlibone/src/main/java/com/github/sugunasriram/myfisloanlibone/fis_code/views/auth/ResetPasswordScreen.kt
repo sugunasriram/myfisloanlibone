@@ -212,7 +212,7 @@ fun EnterPassword(
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
     InputField(
-        inputText = password, hint = stringResource(id = R.string.enter_password),
+        inputText = password, hint = stringResource(id = R.string.set_your_password),
         modifier = Modifier.focusRequester(focusPassword),
         keyboardOptions = KeyboardOptions(
             imeAction = ImeAction.Next, keyboardType = KeyboardType.Password

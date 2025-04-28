@@ -2,11 +2,14 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.network.sse
 
 import android.util.Log
 import androidx.lifecycle.viewModelScope
+import com.github.sugunasriram.myfisloanlibone.fis_code.utils.FileLogger
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.storage.TokenManager
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.BaseViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
@@ -22,12 +25,8 @@ class SSEViewModel : BaseViewModel() {
     fun startListening(url: String) {
         viewModelScope.launch {
             try {
-                // Fetch access token and prepare the authorization header
-                val accessToken = TokenManager.read("accessToken")
-                val bearerToken = "Bearer $accessToken"
-
                 // Get the singleton instance of SSEClient from the Companion object
-                val sseClient = SSEClient.getInstance(url, bearerToken, viewModelScope)
+                val sseClient = SSEClient.getInstance(url, viewModelScope)
 
                 // Start listening using the singleton instance
                 sseClient.startListening()
@@ -38,7 +37,8 @@ class SSEViewModel : BaseViewModel() {
                     .debounce(500) // Debounce to prevent rapid successive updates
                     .collect { event ->
                         _events.value = event // Update the StateFlow with new event
-                        Log.d("Checking  SSE",_events.value.toString())
+                        Log.wtf("Checking  SSE",event)
+                        FileLogger.writeToFile(event,false)
                     }
             } catch (e: CancellationException) {
                 // Handle coroutine cancellation (likely due to ViewModel being cleared)
@@ -62,7 +62,7 @@ class SSEViewModel : BaseViewModel() {
     fun stopListening() {
         // Get the instance of SSEClient and stop listening
         emptyEvents()
-        val sseClient = SSEClient.getInstance("", "", viewModelScope) // Using empty strings as it's a singleton, no new instance will be created
+        val sseClient = SSEClient.getInstance("", viewModelScope) // Using empty strings as it's a singleton, no new instance will be created
         sseClient.stopListening()
     }
 
@@ -74,4 +74,8 @@ class SSEViewModel : BaseViewModel() {
         emptyEvents()
     }
 
+    fun restartListening(url: String) {
+        stopListening()
+        startListening(url)
+    }
 }

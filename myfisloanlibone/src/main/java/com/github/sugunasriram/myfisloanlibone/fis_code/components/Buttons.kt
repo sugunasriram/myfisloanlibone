@@ -44,7 +44,8 @@ fun CurvedPrimaryButtonFull(
     text: String, modifier: Modifier = Modifier, top: Dp = 10.dp, bottom: Dp = 10.dp,
     start: Dp = 40.dp, end: Dp = 40.dp, style: TextStyle = normal20Text500,
     shape: RoundedCornerShape = RoundedCornerShape(10.dp, 10.dp, 10.dp, 10.dp),
-    textColor: Color = appWhite, backgroundColor: Color = appBlue, onClick: () -> Unit
+    textColor: Color = appWhite, backgroundColor: Color = appBlue,
+    enabled: Boolean = true,onClick: () -> Unit
 ) {
     val controller = LocalSoftwareKeyboardController.current
     Text(
@@ -52,10 +53,10 @@ fun CurvedPrimaryButtonFull(
         modifier = modifier
             .fillMaxWidth()
             .background(color = backgroundColor, shape = shape)
-            .clickable {
+            .then(if (enabled) Modifier.clickable {
                 onClick()
                 controller?.hide()
-            }
+            } else Modifier)
             .padding(top = top, bottom = bottom, start = start, end = end)
     )
 

@@ -34,6 +34,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.components.DropDownTextF
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.FixedTopBottomScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.InputField
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.RegisterText
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.AppScreens
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateApplyByCategoryScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateSignInPage
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanProcessScreen
@@ -107,7 +108,7 @@ fun AddBankDetailScreen(navController: NavHostController, id: String, fromFlow: 
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
             AddBankDetailView(
                 bankDetailCollecting = bankDetailCollecting, fromFlow = fromFlow,
@@ -156,7 +157,11 @@ fun AddBankDetailView(
         } else {
             FixedTopBottomScreen(
                 navController = navController, showBottom = true, showBackButton = true,
-                isSelfScrollable = false, onBackClick = { navController.popBackStack() },
+                isSelfScrollable = false, onBackClick = {
+                    navController.navigate(AppScreens.ApplyBycategoryScreen.route) {
+                        popUpTo(AppScreens.AccountDetailsScreen.route) { inclusive = false }
+                    }
+                },
                 buttonText = stringResource(id = R.string.submit),
                 onClick = {
                     onBankSubmit(

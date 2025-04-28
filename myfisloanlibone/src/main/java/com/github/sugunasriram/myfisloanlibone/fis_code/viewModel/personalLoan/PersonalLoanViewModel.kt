@@ -35,14 +35,13 @@ class PersonalLoanViewModel : BaseViewModel() {
 
     fun buttonValidation(
         adharNumberLink: Boolean,
-        consent: Boolean,
         navController: NavHostController,
         context: Context,
         transactionId: String="Sugu",
         fromFlow: String
     ) {
         clearMessage()
-        if (!adharNumberLink || !consent) {
+        if (!adharNumberLink) {
             updateGeneralError(context.getString(R.string.provide_the_adhar_number_linked))
         } else {
             navigateToLoanProcessScreen(navController, transactionId,1, context.getString(R

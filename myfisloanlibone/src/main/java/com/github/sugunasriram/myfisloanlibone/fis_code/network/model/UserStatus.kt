@@ -1,9 +1,12 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.network.model
 
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.AAConsentDetails
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.Offer
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.OfferResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.OfferResponseItem
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializer
 
 @Serializable
 data class UserStatus(
@@ -77,6 +80,12 @@ data class UserItem(
 
     @SerialName("_id")
     val id: String? = null,
+
+    @SerialName("consentResponse")
+    val consentResponse: List<AAConsentDetails?>? = null,
+
+    @SerialName("offerResponse")
+    val offerResponse: List<Offer?>? = null,
 )
 
 @Serializable

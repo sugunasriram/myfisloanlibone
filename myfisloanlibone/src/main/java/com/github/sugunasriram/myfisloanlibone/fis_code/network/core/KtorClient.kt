@@ -3,6 +3,8 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.network.core
 
 import android.util.Log
 import com.github.sugunasriram.myfisloanlibone.fis_code.FsApp
+import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods.Companion.BASE_URL
+import com.github.sugunasriram.myfisloanlibone.fis_code.utils.FileLogger
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.features.HttpTimeout
@@ -21,11 +23,18 @@ import io.ktor.http.Url
 import io.ktor.http.contentType
 import io.ktor.http.takeFrom
 
+
 open class KtorClient {
     //Prod
-   //private val baseUrl = Url("https://ondcfs.jtechnoparks.in/jt-bap${ApiPaths().baseUrl}")
+//   private val baseUrl = Url("https://ondcfs.jtechnoparks.in/jt-bap${ApiPaths().baseUrl}")
     //Preprod
-   private val baseUrl = Url("https://stagingondcfs.jtechnoparks.in/jt-bap${ApiPaths().baseUrl}")
+//   private val baseUrl = Url("${BASE_URL}${ApiPaths().baseUrl}")
+   private val baseUrl = Url("${BASE_URL}${ApiPaths().baseUrl}")
+
+//   private val baseUrl = Url("https://stagingondcfs.jtechnoparks.in/jt-bap${ApiPaths().baseUrl}")
+    //PreProd - with and Without AA
+//    private val baseUrl = Url("https://stagingondcfs.jtechnoparks.in/jt-bap-test${ApiPaths().baseUrl}")
+
     //Staging
 //   private val baseUrl = Url("https://stagingondcfs.jtechnoparks.in/staging-jt-bap${ApiPaths().baseUrl}")
 
@@ -63,8 +72,10 @@ open class KtorClient {
                             !info.startsWith("Content-Length") &&
                             info.isNotEmpty()
                         ) {
-                            Log.v("Ktor ==>", message)
-                            /*FileLogger.writeToFile(message)*/
+                            Log.wtf("Ktor ==>", message)
+//                            if (BuildConfig.DEBUG) {
+//                                    FileLogger.writeToFile(message, true)
+//                            }
                         }
                     }
                 }

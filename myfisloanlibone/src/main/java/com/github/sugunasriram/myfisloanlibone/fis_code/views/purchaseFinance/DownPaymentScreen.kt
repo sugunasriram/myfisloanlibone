@@ -43,6 +43,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.components.RegisterText
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanProcessScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlack
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlue
+import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.greenColour
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.hintTextColor
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal18Text400
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal32Text700
@@ -51,8 +52,8 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
 
 @Composable
 fun DownPaymentScreen(navController: NavHostController, fromFlow: String) {
-    val amount = remember { mutableStateOf(TextFieldValue("")) }
-    var maxAmount = "99000"
+    val amount = remember { mutableStateOf(TextFieldValue("20000")) }
+    var maxAmount = "99,000"
 
     FixedTopBottomScreen(
         navController,
@@ -61,11 +62,13 @@ fun DownPaymentScreen(navController: NavHostController, fromFlow: String) {
         buttonText = stringResource(id = R.string.submit),
         onBackClick = { navController.popBackStack()},
         onClick = {
-            navigateToLoanProcessScreen(
-                navController = navController, transactionId="Sugu",
-                statusId = 19, responseItem = "no need",
-                offerId = "1234", fromFlow = fromFlow
-            )
+            if (amount.value.text.isNotEmpty()) {
+                navigateToLoanProcessScreen(
+                    navController = navController, transactionId = "Sugu",
+                    statusId = 19, responseItem = amount.value.text,
+                    offerId = "1234", fromFlow = fromFlow
+                )
+            }
         }
     ) {
         Column(
@@ -74,7 +77,7 @@ fun DownPaymentScreen(navController: NavHostController, fromFlow: String) {
                 .padding(16.dp)
         ) {
             RegisterText(
-                text = stringResource(id = R.string.enter_down_payment_details),
+                text = stringResource(id = R.string.enter_downpayment_details),
                 style = normal32Text700
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -125,7 +128,7 @@ fun ProductDetails(maxAmount: String) {
                     ) {
                         append("₹1,10,000 ")
                     }
-                    withStyle(style = SpanStyle(color = primaryBlue)) {
+                    withStyle(style = SpanStyle(color = greenColour)) {
                         append("10% OFF")
                     }
                 },
@@ -180,7 +183,7 @@ fun DownpaymentField(
                     text = stringResource(id = R.string.enter_amount),
                     color = hintTextColor,
                     style = normal18Text400,
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Center
                 )
             },
             visualTransformation = VisualTransformation.None,

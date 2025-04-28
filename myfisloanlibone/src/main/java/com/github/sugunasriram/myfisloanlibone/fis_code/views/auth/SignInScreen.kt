@@ -9,12 +9,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -22,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -32,14 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,20 +36,16 @@ import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CenterProgress
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CenteredMoneyImage
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CurvedPrimaryButtonFull
-import com.github.sugunasriram.myfisloanlibone.fis_code.components.HyperText
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.InnerScreenWithHamburger
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.InputField
-import com.github.sugunasriram.myfisloanlibone.fis_code.components.NotRegisteredText
-import com.github.sugunasriram.myfisloanlibone.fis_code.components.SignUpText
-import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateApplyByCategoryScreen
-import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToForgotPasswordScreen
-import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToRegisterScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToOtpScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlue
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal18Text400
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal32Text500
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.slideActiveColor
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.textBlack
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
+import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.auth.RegisterViewModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.auth.SignInViewModel
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -71,13 +55,15 @@ fun SignInScreen(navController: NavHostController) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val signInViewModel: SignInViewModel = viewModel()
+    val registerViewModel: RegisterViewModel = viewModel()
 
     val mobileNumber: String by signInViewModel.mobileNumber.observeAsState("")
-    val password: String by signInViewModel.password.observeAsState("")
-    val emailError: String? by signInViewModel.emailError.observeAsState("")
-    val passwordError by signInViewModel.passwordError.observeAsState("")
+    val mobileNumberError: String? by signInViewModel.mobileNumberError.observeAsState("")
     val isLoginSuccess = signInViewModel.isLoginSuccess.collectAsState()
     val isLoginInProgress = signInViewModel.isLoginInProgress.collectAsState()
+//    val loginResponse = signInViewModel.loginSuccessData.collectAsState()
+    val generatedOtpData = signInViewModel.generatedOtpData.collectAsState()
+
     val showInternetScreen by signInViewModel.showInternetScreen.observeAsState(false)
     val showTimeOutScreen by signInViewModel.showTimeOutScreen.observeAsState(false)
     val showServerIssueScreen by signInViewModel.showServerIssueScreen.observeAsState(false)
@@ -91,12 +77,10 @@ fun SignInScreen(navController: NavHostController) {
         }
     }
     val (focusPhNumber) = FocusRequester.createRefs()
-    val (focusPassword) = FocusRequester.createRefs()
     val (focusSignInButton) = FocusRequester.createRefs()
 
     var showExitDialog by remember { mutableStateOf(false) }
     val activity = LocalContext.current as Activity
-
 
     BackHandler {
         if (navController.currentBackStackEntry?.destination?.route == "sign_in_screen") {
@@ -107,67 +91,67 @@ fun SignInScreen(navController: NavHostController) {
     }
 
     if (!showInternetScreen && !showTimeOutScreen && !showServerIssueScreen && !unexpectedErrorScreen) {
-        InnerScreenWithHamburger(
-            isHamBurgerVisible = false, isSelfScrollable = false, navController = navController
-        ) {
-            CenteredMoneyImage(
-                image = R.drawable.sign_in_screen_image, imageSize = 280.dp, start = 70.dp,
-                end = 70.dp
-            )
-            PhoneNumberFeild(
-                mobileNumber = mobileNumber, focusPhNumber = focusPhNumber, emailError = emailError,
-                focusPassword = focusPassword, signInViewModel = signInViewModel
-            )
-
-            PasswordFeild(
-                password = password, focusPassword = focusPassword, passwordError = passwordError,
-                signInViewModel = signInViewModel
-            )
-
-            HyperText(text = stringResource(id = R.string.forgot_password)) {
-                navigateToForgotPasswordScreen(navController)
-            }
-
-            if (isLoginInProgress.value) {
-                CenterProgress()
+        if (isLoginInProgress.value) {
+            CenterProgress()
+        } else {
+            if (isLoginSuccess.value) {
+                navigateToOtpScreen(
+                    navController,
+                    mobileNumber,
+                    generatedOtpData.value?.data?.orderId.toString(),
+                    "2"
+                )
             } else {
-                if (isLoginSuccess.value) {
-                    navigateApplyByCategoryScreen(navController)
-                } else {
+                InnerScreenWithHamburger(
+                    isHamBurgerVisible = false,
+                    isSelfScrollable = false,
+                    navController = navController
+                ) {
+
+                    CenteredMoneyImage(
+                        image = R.drawable.sign_in_screen_image, imageSize = 300.dp, start = 70.dp,
+                        end = 70.dp, top = 70.dp
+                    )
+                    PhoneNumberField(
+                        mobileNumber = mobileNumber,
+                        focusPhNumber = focusPhNumber,
+                        nextFocus = focusSignInButton,
+                        mobileNumberError = mobileNumberError,
+                        signInViewModel = signInViewModel
+                    )
                     CurvedPrimaryButtonFull(
-                        text = stringResource(id = R.string.sign_in),
+                        text = stringResource(id = R.string.get_otp),
                         modifier = Modifier.padding(
                             start = 40.dp, end = 40.dp, bottom = 20.dp, top = 30.dp
-                        )
+                        ).focusRequester(focusSignInButton),
                     ) {
-                        signInViewModel.signInButtonValidation(
-                            mobileNumber = mobileNumber, password = password, context = context,
-                            focusPassword = focusPassword, focusPhNumber = focusPhNumber,
+                        signInViewModel.signInValidation(
+                            navController,
+                            mobileNumber = mobileNumber, mobileNumberFocus = focusPhNumber,
+                            context = context,
                         )
                     }
+//                    NotRegisteredText(
+//                        text = stringResource(id = R.string.register_user),
+//                        padding = 0.dp
+//                    )
+//                    SignUpText(
+//                        text = stringResource(id = R.string.sign_up),
+//                        style = TextStyle(
+//                            fontFamily = FontFamily(Font(R.font.robotocondensed_bold)),
+//                            fontWeight = FontWeight(800)
+//                        ),
+//                        modifier = Modifier
+//                            .padding(bottom = 10.dp)
+//                            .focusRequester(focusSignInButton)
+//
+//                    ) {
+//                        navigateToRegisterScreen(navController)
+//                    }
                 }
             }
 
-            NotRegisteredText(
-                text = stringResource(id = R.string.register_user), padding = 0.dp
-            )
-            SignUpText(
-                text = stringResource(id = R.string.sign_up),
-                style = TextStyle(
-                    fontFamily = FontFamily(Font(R.font.robotocondensed_bold)),
-                    fontWeight = FontWeight(800)
-                ),
-                modifier = Modifier
-                    .padding(bottom = 10.dp)
-                    .focusRequester(focusSignInButton)
-
-            ) {
-                navigateToRegisterScreen(navController)
-            }
-
-
             if (showExitDialog) {
-
                 AlertDialog(
                     onDismissRequest = { showExitDialog = false },
                     confirmButton = {
@@ -212,63 +196,44 @@ fun SignInScreen(navController: NavHostController) {
     }
 }
 
-@Composable
-fun PasswordFeild(
-    password: String, focusPassword: FocusRequester, signInViewModel: SignInViewModel,
-    passwordError: String?,
-) {
-    var passwordVisible by rememberSaveable { mutableStateOf(false) }
-    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-
-    InputField(
-        inputText = password, hint = stringResource(id = R.string.enter_password),
-        modifier = Modifier.focusRequester(focusPassword),
-        keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Done, keyboardType = KeyboardType.Password
-        ),
-        onValueChange = {
-            signInViewModel.onPasswordChanged(it)
-            signInViewModel.updatePasswordError(null)
-        },
-        error = passwordError,
-        trailingIcon = {
-            IconButton(onClick = {
-                passwordVisible = !passwordVisible
-                signInViewModel.updateGeneralError(null)
-            }) {
-                Icon(
-                    imageVector = image, stringResource(id = R.string.password_icon)
-                )
-            }
-        },
-        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-    )
-}
 
 @Composable
-fun PhoneNumberFeild(
-    mobileNumber: String, focusPhNumber: FocusRequester, focusPassword: FocusRequester,
-    emailError: String?, signInViewModel: SignInViewModel
+fun PhoneNumberField(
+    mobileNumber: String,
+    focusPhNumber: FocusRequester,
+    nextFocus: FocusRequester,
+    mobileNumberError: String?,
+    signInViewModel: SignInViewModel
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
     InputField(
-        inputText = mobileNumber, hint = stringResource(id = R.string.enter_register_phnumber),
+        top = 20.dp,
+        inputText = mobileNumber,
+        hint = stringResource(id = R.string.enter_phone_number),
         modifier = Modifier.focusRequester(focusPhNumber),
         keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Next, keyboardType = KeyboardType.Number
+            imeAction = ImeAction.Done,
+            keyboardType = KeyboardType.Number
         ),
-        keyboardActions = KeyboardActions(onNext = { focusPassword.requestFocus() }),
-        error = emailError,
-        leadingIcon = {
-            Text(
-                text = "+91", style = normal18Text400, color = Color.Black
-            )
-        },
+        keyboardActions = KeyboardActions(onDone = {
+            keyboardController?.hide()  // Hides the keyboard when the user presses "Done"
+            nextFocus.requestFocus()  // Moves focus to the "Get OTP" button
+        }),
+        error = mobileNumberError,
+        leadingIcon = { Text(text = "+91", style = normal18Text400, color = Color.Black) },
         onValueChange = {
             signInViewModel.onMobileNumberChanged(it)
-            signInViewModel.updateEmailError(null)
+            signInViewModel.updateMobileNumberError(null)
+            if (it.length == 10) {
+                keyboardController?.hide()
+                nextFocus.requestFocus()
+            }
         }
     )
 }
+
+
+
 
 @Preview
 @Composable

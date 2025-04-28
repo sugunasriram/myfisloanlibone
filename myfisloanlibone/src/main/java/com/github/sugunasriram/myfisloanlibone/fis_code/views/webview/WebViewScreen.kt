@@ -2,13 +2,11 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.views.webview
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Message
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.JavascriptInterface
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -23,12 +21,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.github.sugunasriram.myfisloanlibone.R
-import com.github.sugunasriram.myfisloanlibone.fis_code.components.LoaderAnimation
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.WebViewTopBar
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateSignInPage
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToAAConsentApprovalScreen
@@ -39,18 +34,20 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoa
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.SearchModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.personalLoan.WebViewModel
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.SearchResponseModel
 
 @SuppressLint("ResourceType")
 @Composable
 fun SearchWebViewScreen(
-    navController: NavHostController, purpose: String, fromFlow: String
+    navController: NavHostController,
+    purpose: String,
+    fromFlow: String,
+    id: String,
+    transactionId: String,
+    url: String
 ) {
-    val context = LocalContext.current
     val webViewModel: WebViewModel = viewModel()
 
-    val webScreenLoading = webViewModel.webProgress.collectAsState()
-    val webScreenLoaded = webViewModel.webViewLoaded.collectAsState()
-    val searchResponse by webViewModel.searchResponse.collectAsState()
     val gstSearchResponse by webViewModel.gstSearchResponse.collectAsState()
     val navigationToSignIn by webViewModel.navigationToSignIn.collectAsState()
 
@@ -63,62 +60,130 @@ fun SearchWebViewScreen(
     val errorMessage by webViewModel.errorMessage.collectAsState()
 
     when {
-        navigationToSignIn -> navigateSignInPage (navController)
+        navigationToSignIn -> navigateSignInPage(navController)
         showInternetScreen -> CommonMethods().ShowInternetErrorScreen(navController)
         showTimeOutScreen -> CommonMethods().ShowTimeOutErrorScreen(navController)
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage, false)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
-            if (webScreenLoading.value) {
-                LoaderAnimation(
-                    image = R.raw.we_are_currently_processing,
-                    updatedImage = R.raw.verify_monitoring_consent_success
+            if (fromFlow.equals("Personal Loan", ignoreCase = true)) {
+                SearchWebView(
+                    navController = navController, transactionId = transactionId, urlToOpen =
+                    url,
+                    searchId = id, fromFlow = fromFlow, pageContent = {}
                 )
             } else {
-                val endUse = if (purpose.equals("Other Consumption Purpose", ignoreCase = true))
-                    "other"
-                else if (purpose.equals("Consumer Durable Purchase", ignoreCase = true))
-                    "consumerDurablePurchase"
-                else purpose.lowercase()
-
-                if (!webScreenLoaded.value) {
-                    loadWebScreen(
-                        fromFlow = fromFlow, webViewModel = webViewModel, context = context,
-                        endUse = endUse, purpose = purpose
-                    )
-                } else {
-                    NavigateToWebView(
-                        searchResponse = searchResponse, gstSearchResponse = gstSearchResponse,
-                        fromFlow = fromFlow, navController = navController
-                    )
-                }
+                NavigateToWebView(
+                    gstSearchResponse = gstSearchResponse,
+                    fromFlow = fromFlow,
+                    navController = navController,
+                    searchResponse = SearchModel(
+                        status = true,
+                        statusCode = 200,
+                        data = SearchResponseModel(
+                            id = id,
+                            url = url,
+                            transactionId = transactionId,
+                            offerResponse = null,
+                            offers = null,
+                            consentResponse = null
+                        )
+                    ), searchModel = null
+                )
             }
+
+//            if (webScreenLoading.value) {
+//                LoaderAnimation(
+//                    image = R.raw.we_are_currently_processing,
+//                    updatedImage = R.raw.verify_monitoring_consent_success,
+//                    showTimer = true
+//                )
+//            } else {
+//                val endUse = if (purpose.equals("Other Consumption Purpose", ignoreCase = true))
+//                    "other"
+//                else if (purpose.equals("Consumer Durable Purchase", ignoreCase = true))
+//                    "consumerDurablePurchase"
+//                else purpose.lowercase()
+//
+//                if (!webScreenLoaded.value) {
+//                    loadWebScreen(
+//                        fromFlow = fromFlow, webViewModel = webViewModel, context = context,
+//                        endUse = endUse, purpose = purpose
+//                    )
+//                } else {
+////                    NavigateToWebView(
+////                        searchResponse = searchResponse, gstSearchResponse = gstSearchResponse,
+////                        fromFlow = fromFlow, navController = navController
+////                    )
+////                    searchResponse?.let { search ->
+////                        if(search.data?.offers == true){
+////                            search.data.transactionId?.let { transactionId ->
+////                                navigateToLoanProcessScreen(
+////                                    navController, transactionId = transactionId,
+////                                    statusId = 2, responseItem = "No Need Response Item", offerId = "1234",
+////                                    fromFlow = fromFlow
+////                                )
+////                            }
+////                        }
+////                        else{
+////                            NavigateToWebView(
+////                                searchResponse = searchResponse, gstSearchResponse = gstSearchResponse,
+////                                fromFlow = fromFlow, navController = navController
+////                            )
+////                        }
+////                    }
+//
+//                    searchResponse?.let { search ->
+//                        if(!search.data?.url.isNullOrEmpty()){
+//                            NavigateToWebView(
+//                                searchResponse = search, gstSearchResponse = gstSearchResponse,
+//                                fromFlow = fromFlow, navController = navController
+//                            )
+//                        }
+//                        else {
+//                            if (search.data?.offers == true) {
+//                                search.data.transactionId?.let { transactionId ->
+//                                    navigateToLoanProcessScreen(
+//                                        navController,
+//                                        transactionId = transactionId,
+//                                        statusId = 2,
+//                                        responseItem = "No Need Response Item",
+//                                        offerId = "1234",
+//                                        fromFlow = fromFlow
+//                                    )
+//                                }
+//                            }
+//                        }
+//                    }
+//
+//                }
+//            }
         }
     }
 }
 
 @Composable
 fun NavigateToWebView(
-    fromFlow: String, navController: NavHostController, searchResponse: SearchModel?,
-    gstSearchResponse: GstSearchResponse?,
+    searchModel: SearchModel?,fromFlow: String, navController: NavHostController,
+    gstSearchResponse: GstSearchResponse?, searchResponse: SearchModel?
 ) {
     if (fromFlow.equals("Personal Loan", ignoreCase = true)) {
-        searchResponse?.let { search ->
-            search.data?.transactionId?.let { transactionId ->
-            search.data?.id?.let { id ->
-                search.data.url?.let { url ->
-                    SearchWebView(
-                        navController = navController, transactionId = transactionId, urlToOpen =
-                        url,
-                        searchId = id, fromFlow = fromFlow, pageContent = {}
-                    )
+        searchModel.let { search ->
+            search?.data?.transactionId?.let { transactionId ->
+                search?.data?.id?.let { id ->
+                    search.data.url?.let { url ->
+                        SearchWebView(
+                            navController = navController, transactionId = transactionId,
+                            urlToOpen = url,
+                            searchId = id, fromFlow = fromFlow, pageContent = {}
+                        )
+                    }
                 }
             }
-            }
         }
-    } else if (fromFlow.equals("Invoice Loan", ignoreCase = true)) {
+    }else if (fromFlow.equals("Invoice Loan", ignoreCase = true)) {
         gstSearchResponse.let { search ->
             search?.data?.transactionId?.let { transactionId ->
                 search?.data?.id?.let { id ->
@@ -171,7 +236,7 @@ fun loadWebScreen(
         webViewModel.financeSearch(
             financeSearchModel = FinanceSearchModel(
                 loanType = "PURCHASE_FINANCE", bureauConsent = "on", tnc = "on", endUse = "travel",
-                downpayment = "200", merchantGst = "24AAHFC3011G1Z4", merchantPan = "EGBQA2212D",
+                downpayment = purpose, merchantGst = "24AAHFC3011G1Z4", merchantPan = "EGBQA2212D",
                 isFinancing = "on", merchantBankAccountNumber = "639695357641006",
                 merchantIfscCode = "XRSY0YPV5SW", merchantBankAccountHolderName = "mohan",
                 productCategory = "fashion", productBrand = "style", productSKUID = "12345678",
@@ -219,33 +284,45 @@ fun SearchWebView(
                             settings.javaScriptEnabled = true
                             settings.setSupportMultipleWindows(true)
 
-                            addJavascriptInterface(object {
-                                @JavascriptInterface
-                                fun onFormSubmitted() {
-                                    Log.d("WebView", "Form submitted")
-                                }
-                            }, "Android")
+                            settings.domStorageEnabled = true
+                            settings.allowFileAccess = true
+                            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                            settings.allowContentAccess = true
+                            settings.allowFileAccessFromFileURLs = true
+                            settings.allowUniversalAccessFromFileURLs = true
+
+                            settings.setSupportZoom(true)
+                            settings.builtInZoomControls = true
+                            settings.displayZoomControls = false
+
+                            settings.loadWithOverviewMode = true
+                            settings.useWideViewPort = true
+                            settings.setSupportMultipleWindows(true)
+                            settings.javaScriptCanOpenWindowsAutomatically = true
+                            settings.mediaPlaybackRequiresUserGesture = false
+                            settings.safeBrowsingEnabled = true
+//                            WebView.setWebContentsDebuggingEnabled(true);
+                            settings.cacheMode = WebSettings.LOAD_DEFAULT
+
+                            // Enable hardware acceleration for better performance
                             setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                            setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_BOUND, false)
 
                             layoutParams = ViewGroup.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT
                             )
 
+                            isFocusable = true
+                            isFocusableInTouchMode = true
+
                             webViewClient = object : WebViewClient() {
-                                @SuppressLint("SuspiciousIndentation")
-                                @Deprecated("Deprecated in Java")
                                 override fun shouldOverrideUrlLoading(
                                     view: WebView?,
                                     url: String?
                                 ): Boolean {
                                     url?.let {
-                                        if (it.startsWith("http://www.example.com/external")) {
-                                            val intent =
-                                                Intent(Intent.ACTION_VIEW, Uri.parse(it))
-                                            context.startActivity(intent)
-                                            return true
-                                        }
+
                                         if (it.startsWith("https://stagingondcfs.jtechnoparks.in/ondc/buyer-finance/consent-callback/")) {
                                             navigateToAAConsentApprovalScreen(
                                                 navController = navController, searchId = searchId,
@@ -253,6 +330,8 @@ fun SearchWebView(
                                             )
                                             return true
                                         }
+                                        Log.d("SearchWebViewScreen", "urlToOpen: $it")
+
                                         view?.loadUrl(it)
                                     }
                                     return true
@@ -277,40 +356,53 @@ fun SearchWebView(
                                         request: WebResourceRequest
                                     ): Boolean {
                                         val url = request.url.toString()
-                                        if (url == "https://yourredirecturl.com/success") {
-                                            newWebView?.visibility = View.GONE
-                                            (newWebView?.parent as? ViewGroup)?.removeView(
-                                                newWebView
-                                            )
-                                            newWebView?.destroy()
-                                            return true
-                                        } else if (url == "https://yourredirecturl.com/failure") {
-                                            newWebView?.visibility = View.GONE
-                                            (newWebView?.parent as? ViewGroup)?.removeView(
-                                                newWebView
-                                            )
-                                            newWebView?.destroy()
-                                            return true
+                                        if (view != null && url != null) {
+                                            Log.d("SearchWebViewScreen", "1 urlToOpen: $url")
+
+                                            view.loadUrl(url)
+                                            return false
+                                        } else {
+                                            Log.d("SearchWebViewScreen", "2 urlToOpen: $url")
+
+                                            return super.shouldOverrideUrlLoading(view, request)
                                         }
-                                        return super.shouldOverrideUrlLoading(view, request)
                                     }
                                 }
-                                newWebView?.onFocusChangeListener =
-                                    View.OnFocusChangeListener { _, hasFocus ->
-                                        webView.visibility =
-                                            if (hasFocus) View.GONE else View.VISIBLE
-                                    }
                                 newWebView?.settings?.apply {
                                     javaScriptEnabled = true
-                                    cacheMode = WebSettings.LOAD_NO_CACHE
                                     domStorageEnabled = true
-                                    allowFileAccess = true
-                                    allowContentAccess = true
-                                    allowFileAccessFromFileURLs = true
-                                    allowUniversalAccessFromFileURLs = true
-                                    supportMultipleWindows()
+                                    mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                    setAllowFileAccess(true)
+                                    setAllowContentAccess(true)
+                                    setAllowFileAccessFromFileURLs(true)
+                                    setAllowUniversalAccessFromFileURLs(true)
+                                    setSupportMultipleWindows(true)
+                                    setJavaScriptCanOpenWindowsAutomatically(true)
+                                    setGeolocationEnabled(true)
+                                    loadsImagesAutomatically = true
+                                    loadWithOverviewMode = true
                                     javaScriptCanOpenWindowsAutomatically = true
+                                    cacheMode = WebSettings.LOAD_DEFAULT
                                 }
+                                // Apply layout parameters to the WebView
+                                newWebView?.layoutParams = ViewGroup.MarginLayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+
+                                newWebView?.isFocusable = true
+                                newWebView?.isFocusableInTouchMode = true
+
+                                val cookieManager = CookieManager.getInstance()
+
+                                // Enable cookies
+                                cookieManager.setAcceptCookie(true)
+
+                                // If you want to allow third-party cookies (optional)
+                                // Pass the WebView instance directly
+                                cookieManager.setAcceptThirdPartyCookies(newWebView, true)
+                                cookieManager.setAcceptThirdPartyCookies(view, true)
+                                newWebView?.setWebChromeClient(this);
                                 view?.addView(newWebView)
                                 val transport = resultMsg?.obj as? WebView.WebViewTransport
                                 transport?.webView = newWebView
@@ -324,7 +416,9 @@ fun SearchWebView(
                                 window?.destroy()
                             }
                         }
-                        urlToOpen.let { webView.loadUrl(it) }
+                        urlToOpen.let {
+                            Log.d("SearchWebViewScreen", " urlToOpen: $it")
+                            webView.loadUrl(it) }
                     }
                 )
             }

@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -15,11 +17,24 @@ import android.widget.FrameLayout
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.WebViewTopBar
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanDetailScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToPrePaymentStatusScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiPaths
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEData
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
@@ -30,21 +45,38 @@ fun PrePartPaymentWebView(
     navController: NavHostController, url: String, orderId: String, status: String,
     fromFlow: String
 ) {
+    val sseViewModel: SSEViewModel = viewModel()
+    val sseEvents by sseViewModel.events.collectAsState(initial = "")
+
+    LaunchedEffect(Unit) {
+        sseViewModel.startListening(ApiPaths().sse)
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        WebViewTopBar(navController, title = "PrePart Payment")
+        WebViewTopBar(navController, title = "")
         AndroidView(
             factory = { context ->
                 WebView(context).apply {
                     configureWebViewSettings()
-
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        navigateToPrePaymentStatusScreen(
-                            navController = navController, orderId = orderId, headerText = status,
-                            fromFlow = fromFlow
-                        )
-                    }, 5000)
                     // Enable hardware acceleration for better performance
                     setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+                    settings.setGeolocationEnabled(true)
+                    settings.setJavaScriptEnabled(true)
+                    settings.loadsImagesAutomatically = true
+                    settings.domStorageEnabled = true
+                    settings.allowFileAccess = true
+                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    settings.allowContentAccess = true
+                    settings.allowFileAccessFromFileURLs = true
+                    settings.allowUniversalAccessFromFileURLs = true
+                    settings.setSupportZoom(true)
+                    settings.builtInZoomControls = true
+                    settings.displayZoomControls = false
+                    settings.loadWithOverviewMode = true
+                    settings.useWideViewPort = true
+                    settings.setSupportMultipleWindows(true)
+                    settings.javaScriptCanOpenWindowsAutomatically = true
 
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -62,9 +94,64 @@ fun PrePartPaymentWebView(
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT
                 )
+
+                // Enable cookies
+                val cookieManager = CookieManager.getInstance()
+                cookieManager.setAcceptCookie(true)
+                cookieManager.setAcceptThirdPartyCookies(webView, true)
                 webView.loadUrl(url)
             }
         )
+    }
+
+    val handler = remember {
+        Handler(Looper.getMainLooper()).apply {
+            postDelayed({
+                if (sseEvents.isEmpty()) {
+                    navigateToLoanDetailScreen(navController = navController, orderId = orderId, fromFlow = fromFlow)
+                }
+            }, 3 * 60 * 1000)
+        }
+    }
+
+
+    // Handle the events and navigate based on the presence of events
+    LaunchedEffect(sseEvents) {
+        if (sseEvents.isNotEmpty()) {
+            handler.removeCallbacksAndMessages(null)
+            try {
+
+                val sseData: SSEData? = try {
+                    json.decodeFromString<SSEData>(sseEvents)
+                } catch (e: Exception) {
+                    Log.e("SSEParsingError", "Error parsing SSE data", e)
+                    null
+                }
+
+                sseData?.let {
+                    it.data?.let {
+                        it.data?.let { data ->
+                            if (data.id == orderId) {
+                                sseViewModel.stopListening()
+                                navigateToPrePaymentStatusScreen(
+                                    navController = navController,
+                                    orderId = orderId,
+                                    headerText = status,
+                                    fromFlow = fromFlow
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Log.d("Prepayment", "sseData : ${sseData}")
+
+
+            } catch (e: Exception) {
+                Log.e("SSEParsingError", "Error parsing SSE data", e)
+            }
+        }
+
     }
 }
 
@@ -143,16 +230,50 @@ private fun createWebChromeClient() = object : WebChromeClient() {
                     view: WebView, request: WebResourceRequest
                 ): Boolean {
                     val url = request.url.toString()
-                    if (url == "https://yourredirecturl.com/success" || url == "https://yourredirecturl.com/failure") {
-                        visibility = View.GONE
-                        (parent as? ViewGroup)?.removeView(this@apply)
-                        destroy()
-                        return true
+                    if (view != null && url != null) {
+                        Log.d("WebView", "1 Sugu URL: $url")
+                        view.loadUrl(url)
+
+                        return false
+                    } else {
+                        Log.d("WebView", "0 Sugu request: $request")
+
+                        return super.shouldOverrideUrlLoading(view, request)
                     }
-                    return super.shouldOverrideUrlLoading(view, request)
                 }
+
             }
         }
+
+        val webSettings = newWebView?.settings
+        if (webSettings != null) {
+            webSettings.javaScriptEnabled = true
+            webSettings.domStorageEnabled = true
+            webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            webSettings.setAllowFileAccess(true)
+            webSettings.setAllowContentAccess(true)
+            webSettings.setAllowFileAccessFromFileURLs(true)
+            webSettings.setAllowUniversalAccessFromFileURLs(true)
+            webSettings.setSupportMultipleWindows(true)
+            webSettings.setJavaScriptCanOpenWindowsAutomatically(true)
+            webSettings.setGeolocationEnabled(true)
+            webSettings.loadsImagesAutomatically = true
+
+            webSettings.setSupportZoom(true)
+            webSettings.builtInZoomControls = true
+            webSettings.displayZoomControls = false
+
+            webSettings.loadWithOverviewMode = true
+            webSettings.javaScriptCanOpenWindowsAutomatically = true
+            webSettings.cacheMode = WebSettings.LOAD_DEFAULT
+            webSettings.useWideViewPort = true
+        }
+
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.setAcceptCookie(true)
+        cookieManager.setAcceptThirdPartyCookies(newWebView, true)
+        cookieManager.setAcceptThirdPartyCookies(view, true)
+        newWebView?.setWebChromeClient(this);
 
         view?.addView(newWebView)
         (resultMsg?.obj as? WebView.WebViewTransport)?.webView = newWebView

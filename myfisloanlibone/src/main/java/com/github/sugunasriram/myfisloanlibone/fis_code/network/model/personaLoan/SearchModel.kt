@@ -19,5 +19,15 @@ data class SearchBodyModel(
 data class SearchResponseModel(
     val id: String? = null,
     val url: String? = null,
-    val transactionId: String? = null
+    val transactionId: String? = null,
+    val offers: Boolean?=null,
+    val offerResponse:List<Offer?>? = null,
+    val consentResponse:List<AAConsentDetails?>? = null
+)
+@Serializable
+data class AAConsentDetails(
+    val name: String? = null,
+    val image: String? = null,
+    val min_interest_rate: String? = null,
+    val max_interest_rate: String? = null
 )

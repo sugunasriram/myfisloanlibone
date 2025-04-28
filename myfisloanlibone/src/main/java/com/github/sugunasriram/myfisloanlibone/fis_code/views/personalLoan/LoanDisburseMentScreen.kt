@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +31,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.components.SpaceBetweenT
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateApplyByCategoryScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToDashboardScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiPaths
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.UpdateConsentHandlerBody
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.Catalog
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEData
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEViewModel
@@ -40,6 +42,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal16Text400
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal18Text500
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.slateGrayColor
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
+import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.personalLoan.LoanAgreementViewModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.webview.ConsentHandlerScreen
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
@@ -52,11 +55,17 @@ private val json1 = Json {
 
 @SuppressLint("ResourceType")
 @Composable
-fun LoanDisbursementScreen(navController: NavHostController, transactionId: String,
-                           id: String, fromFlow: String) {
+fun LoanDisbursementScreen(
+    navController: NavHostController, transactionId: String,
+    id: String, fromFlow: String
+) {
 
     var backPressedTime by remember { mutableLongStateOf(0L) }
     val context = LocalContext.current
+    val loanAgreementViewModel: LoanAgreementViewModel by lazy { LoanAgreementViewModel() }
+    val consentHandled by loanAgreementViewModel.consentHandled.collectAsState()
+    val sseDataForPf by loanAgreementViewModel.sseData.collectAsState()
+    var apiTriggered by remember { mutableStateOf(false) }
 
     BackHandler {
         val currentTime = System.currentTimeMillis()
@@ -71,10 +80,20 @@ fun LoanDisbursementScreen(navController: NavHostController, transactionId: Stri
     }
 
     val sseViewModel: SSEViewModel = viewModel()
-    val sseEvents by sseViewModel.events.collectAsState()
+    val sseEvents by sseViewModel.events.collectAsState(initial = "")
 
     LaunchedEffect(Unit) {
         sseViewModel.startListening(ApiPaths().sse)
+    }
+
+    if (sseDataForPf != null) {
+        android.util.Log.d("SSETRIGGER", "Inside  MoveToDashBoard")
+        sseDataForPf?.let { data ->
+            MoveToDashBoard(
+                navController = navController, id = id, fromFlow = fromFlow,
+                sseData = data, context = context
+            )
+        }
     }
 
     val sseData: SSEData? = try {
@@ -88,21 +107,27 @@ fun LoanDisbursementScreen(navController: NavHostController, transactionId: Stri
         null
     }
     val type = sseData?.data?.data?.type
-    var sseTransactionId = sseData?.data?.data?.txnId
-    //Sugu - to remove
-    if (sseTransactionId == null){
-        sseTransactionId = sseData?.data?.data?.transactionId
-    }
+    var sseTransactionId = sseData?.data?.data?.txnId ?: sseData?.data?.data?.transactionId
+    ?: sseData?.data?.data?.catalog?.txn_id
 
     if (sseData == null || type == "INFO") {
         AgreementAnimation(text = "Processing Please Wait...", image = R.raw.processing_wait)
     } else {
-        Log.d("LoanDisbursement:", "transactionId :["+transactionId + "] " +
-                "sseTransactionId:["+ sseTransactionId)
+        Log.d(
+            "LoanDisbursement:", "transactionId :[" + transactionId + "] " +
+                    "sseTransactionId:[" + sseTransactionId
+        )
         if (transactionId == sseTransactionId && type == "ACTION") {
             sseData.data.data.type.let { actionType ->
                 sseData.data.data.consent?.let { consent ->
-                    if (transactionId == sseTransactionId && actionType == "ACTION" && consent) {
+
+                    android.util.Log.d("SSETRIGGER", "START")
+                    if (fromFlow == "Purchase Finance") {
+                        android.util.Log.d("SSETRIGGER", "INSIDE fromFlow")
+                        apiTriggered = true
+                        loanAgreementViewModel.updateSSEData(sseData)
+
+                    } else if (transactionId == sseTransactionId && actionType == "ACTION" && consent) {
                         MoveToConsentHandlerScreen(
                             sseData = sseData, navController = navController, fromFlow = fromFlow
                         )
@@ -113,13 +138,29 @@ fun LoanDisbursementScreen(navController: NavHostController, transactionId: Stri
                             sseData = sseData, context = context
                         )
 
-
                     }
                 }
             }
         }
     }
+
+    LaunchedEffect(apiTriggered) {
+        if (apiTriggered) {
+            android.util.Log.d("SSETRIGGER", "API TRIGGERED")
+            loanAgreementViewModel.updateConsentHandler(
+                updateConsentHandlerBody = UpdateConsentHandlerBody(
+                    subType = "CONSENT_UPDATE",
+                    id = id,
+                    amount = "40000.0",
+                    consentStatus = "DELIVERED",
+                    loanType = "PURCHASE_FINANCE"
+                ),
+                context = context,
+            )
+        }
+    }
 }
+
 
 @Composable
 fun MoveToDashBoard(

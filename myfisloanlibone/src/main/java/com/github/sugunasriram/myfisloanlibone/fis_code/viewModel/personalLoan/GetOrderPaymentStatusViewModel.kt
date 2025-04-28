@@ -34,12 +34,6 @@ class GetOrderPaymentStatusViewModel : BaseViewModel() {
     private val _unAuthorizedUser = MutableLiveData<Boolean>(false)
     val unAuthorizedUser: LiveData<Boolean> = _unAuthorizedUser
 
-    private val _errorHandling = MutableLiveData<Boolean>(false)
-    val errorHandling: LiveData<Boolean> = _errorHandling
-
-    private val _paymentStatusListEmpty = MutableLiveData<Boolean>(false)
-    val loanListEmpty: LiveData<Boolean> = _paymentStatusListEmpty
-
     private val _middleLoan = MutableLiveData<Boolean>(false)
     val middleLoan: LiveData<Boolean> = _middleLoan
 
@@ -70,12 +64,8 @@ class GetOrderPaymentStatusViewModel : BaseViewModel() {
     private val _orderPaymentStatusList = MutableStateFlow<ArrayList<OrderPaymentStatusItem>?>(null)
     val orderPaymentStatusList: StateFlow<ArrayList<OrderPaymentStatusItem>?> = _orderPaymentStatusList
 
-    private var hasApiBeenCalled = false
 
     fun getOrderPaymentStatus(loanType:String, loanId: String, context: Context) {
-        //Sugu
-//        if (hasApiBeenCalled) return
-//        hasApiBeenCalled = true
         _orderPaymentListLoading.value = true
         _orderPaymentListLoaded.value = false
 
@@ -93,7 +83,8 @@ class GetOrderPaymentStatusViewModel : BaseViewModel() {
             if (response != null){
                 if (response.statusCode?.toInt() == 200) {
                     if (response.data?.size == 0){
-                        _paymentStatusListEmpty.value = true
+                        _orderPaymentListLoaded.value = true
+                        _orderPaymentListLoading.value = false
                     } else {
                         handleGetOrderPaymentStatusSuccess(response)
                     }

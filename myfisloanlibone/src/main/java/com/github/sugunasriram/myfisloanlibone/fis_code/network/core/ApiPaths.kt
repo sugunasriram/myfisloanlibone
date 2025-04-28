@@ -1,5 +1,7 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.network.core
 
+import com.github.sugunasriram.myfisloanlibone.BuildConfig
+import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
 import io.ktor.http.Url
 
 class ApiPaths {
@@ -9,6 +11,10 @@ class ApiPaths {
 
     // Auth Flow Api Paths
     val authLogIn = "auth/login"
+
+    val authRoles = "auth/roles"
+
+    val authGenerateOtp = "auth/generateOtp"
 
     val authLogOut = "auth/logout"
 
@@ -47,10 +53,16 @@ class ApiPaths {
     val getBanksList = "static/getBanksList"
 
     // Server side Events Api Paths
+    val sse = CommonMethods.BASE_URL+"/api/v1/sse"
     //Prod
-    //val sse = "https://ondcfs.jtechnoparks.in/jt-bap/api/v1/sse"
+//    val sse = "https://ondcfs.jtechnoparks.in/jt-bap/api/v1/sse"
     //Preprod
-    val sse = "https://stagingondcfs.jtechnoparks.in/jt-bap/api/v1/sse"
+//    val sse = "https://stagingondcfs.jtechnoparks.in/jt-bap/api/v1/sse"
+
+    //PreProd - with and Without AA
+//    val sse = "https://stagingondcfs.jtechnoparks.in/jt-bap-test/api/v1/sse"
+
+    //Staging
 //    val sse = "https://stagingondcfs.jtechnoparks.in/staging-jt-bap/api/v1/sse"
 
     // ONDC Flow Api paths

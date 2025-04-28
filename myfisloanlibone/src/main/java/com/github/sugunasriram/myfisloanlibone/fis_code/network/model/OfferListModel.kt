@@ -3,6 +3,7 @@ package com.github.sugunasriram.myfisloanlibone.fis_code.network.model
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstData
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstOfferData
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.Offer
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.pf.PfOffer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -32,3 +33,15 @@ data class GstOfferListModel(
     val statusCode: Int? = null
 )
 
+@Serializable
+data class PfOfferListModel(
+
+    @SerialName("data")
+    val data: List<PfOffer?>? = null,
+
+    @SerialName("status")
+    val status: Boolean? = null,
+
+    @SerialName("statusCode")
+    val statusCode: Int? = null
+)

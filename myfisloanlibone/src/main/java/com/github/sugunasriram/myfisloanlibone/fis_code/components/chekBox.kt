@@ -21,7 +21,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.primaryBlue
 @Composable
 fun CheckBoxText(
     boxState: Boolean, textColor: Color = appBlack, modifier: Modifier = Modifier,
-    style: TextStyle = normal14Text400, start: Dp = 30.dp, end: Dp = 10.dp, bottom: Dp = 10.dp,
+    style: TextStyle = normal14Text400, start: Dp = 10.dp, end: Dp = 10.dp, bottom: Dp = 10.dp,
     top: Dp = 0.dp, boxStart: Dp = 10.dp, text: String, onCheckedChange: ((Boolean) -> Unit)
 ) {
     Row(

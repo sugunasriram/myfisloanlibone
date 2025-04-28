@@ -1,10 +1,17 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.components
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Environment
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,13 +26,16 @@ import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.DrawerState
+import androidx.compose.material.DrawerValue
 import androidx.compose.material.Text
+import androidx.compose.material.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,9 +44,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.airbnb.lottie.BuildConfig
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToAboutUsScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToIssueListScreen
@@ -68,30 +82,30 @@ fun TopBarUi(
             .fillMaxWidth()
             .padding(top = 5.dp, bottom = 5.dp)
     ) {
-        if (isHamBurgerVisible) {
-            Image(
-                painter = painterResource(R.drawable.hamburger_menu),
-                contentDescription = stringResource(id = R.string.hamburger_menu),
-                modifier = Modifier
-                    .clickable { openDrawer(coroutineScope, drawerState) }
-                    .padding(top = 16.dp, bottom = 16.dp, start = 20.dp, end = 20.dp)
-                    .size(width = 30.dp, height = 20.dp)
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            if (isHamBurgerVisible) {
+                Image(
+                    painter = painterResource(R.drawable.hamburger_menu),
+                    contentDescription = stringResource(id = R.string.hamburger_menu),
+                    modifier = Modifier
+                        .clickable { openDrawer(coroutineScope, drawerState) }
+                        .padding(top = 16.dp, bottom = 16.dp, start = 20.dp, end = 20.dp)
+                        .size(width = 30.dp, height = 20.dp)
+                        .align(Alignment.TopStart)
 
+                )
+            } else {
+                Spacer(modifier = Modifier.size(10.dp)) // Placeholder space
+                closeDrawer(coroutineScope, drawerState)
+            }
+            Image(
+                painter = painterResource(R.drawable.app_logo),
+                contentDescription = stringResource(id = R.string.app_logo),
+                modifier = Modifier
+                    .size(width = 70.dp, height = 50.dp)
             )
-        } else {
-            Spacer(modifier = Modifier.size(50.dp)) // Placeholder space
-            closeDrawer(coroutineScope, drawerState)
         }
 
-        Image(
-            painter = painterResource(R.drawable.app_logo),
-            contentDescription = stringResource(id = R.string.app_logo),
-            modifier = Modifier
-                .size(width = 70.dp, height = 50.dp)
-                .align(Alignment.CenterVertically)
-        )
-
-        Text("")
     }
 }
 
@@ -183,14 +197,14 @@ fun SideMenuContent(
                     )
                     .padding(top = 10.dp)
             ) {
-                getUserResponse?.data?.firstName?.let { firstName ->
-                    SideMenuImage(firstName) {}
+                getUserResponse?.data?.let { user ->
+                    val fullName = "${user.firstName ?: ""} ${user.lastName ?: ""}"
+                    SideMenuImage(fullName) {}
                 }
-
                 HorizontalDivider(start = 0.dp, end = 0.dp)
                 SideMenuTextButton("Update Profile") {
                     closeDrawer(coroutineScope, drawerState)
-                    navigateToUpdateProfileScreen(navController)
+                    navigateToUpdateProfileScreen(navController, fromFlow = "SideBar")
                 }
                 SideMenuTextButton("Loan Status") {
                     closeDrawer(coroutineScope, drawerState)
@@ -304,6 +318,16 @@ fun SideMenuContent(
     }
 }
 
+
+
+@Preview
+@Composable
+private fun TopBarPreview() {
+    TopBarUi(rememberCoroutineScope(), rememberDrawerState(DrawerValue.Closed),true)
+//    SideMenuContent(rememberCoroutineScope(), rememberDrawerState(DrawerValue.Open),
+//        rememberNavController()
+//    )
+}
 
 
 

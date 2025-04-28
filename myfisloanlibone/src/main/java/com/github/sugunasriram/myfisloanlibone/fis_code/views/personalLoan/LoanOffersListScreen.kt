@@ -22,10 +22,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
@@ -252,7 +254,7 @@ fun LoanAmountTenure(offerResponse: Offer) {
                 ) {
                     HeaderNextRowValue(
                         textHeader = stringResource(id = R.string.loan_tenure),
-                        textValue = tag.value,
+                        textValue = tag.value?:"",
                         textColorHeader = appBlack,
                         textColorValue = appBlack,
                         modifier = Modifier
@@ -267,7 +269,7 @@ fun LoanAmountTenure(offerResponse: Offer) {
         }
         offerResponse.offer?.itemTags?.forEach { itemTag ->
             itemTag?.tags?.forEach { tag ->
-                if (tag.key.contains("INSTALLMENT_AMOUNT", ignoreCase = true)) {
+                if (tag.key.contains("INSTALLMENT_AMOUNT", ignoreCase = true) && !tag.value.isNullOrEmpty()) {
                     val installmentAmount = tag.value
                     HeaderNextRowValue(
                         textHeader = stringResource(
@@ -311,7 +313,7 @@ fun AmountInterest(offerResponse: Offer) {
                 ) {
                     HeaderNextRowValue(
                         textHeader = stringResource(id = R.string.rate_of_interest),
-                        textValue = tag.value,
+                        textValue = tag.value?:"",
                         textColorHeader = appBlack,
                         textColorValue = appBlack,
                         modifier = Modifier
@@ -398,4 +400,11 @@ fun CardHeader(
             }
         }
     }
+}
+
+
+@Preview
+@Composable
+private fun PreviewLoanOfferListScreen() {
+    LoanOffersListScreen(rememberNavController(),"","")
 }

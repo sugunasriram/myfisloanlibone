@@ -53,7 +53,7 @@ fun AAConsentApprovalScreen(
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         loanNotFound -> {
             LoanNotApprovedScreen(navController)
         }
@@ -61,8 +61,9 @@ fun AAConsentApprovalScreen(
         else -> {
             if (isLoading) {
                 LoaderAnimation(
+                    text = stringResource(R.string.processing_please_wait),
                     updatedText = stringResource(id = R.string.generating_best_offers),
-                    image = R.raw.we_are_currently_processing
+                    image = R.raw.we_are_currently_processing, showTimer = true
                 )
             } else {
                 if (isLoadingSuccess) {

@@ -54,6 +54,15 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.normal32Text700
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.softSteelGray
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
 import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.igm.CreateIssueViewModel
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.Surface
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+
+import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.negativeGray
+
 
 @Composable
 fun IssueListScreen(
@@ -109,29 +118,44 @@ fun IssueListView(
         CenterProgress()
     } else {
         if (issueListLoaded || orderIssuesLoaded) {
-            FixedTopBottomScreen(
-                navController = navController, isSelfScrollable = false, buttonText = "Raise Issue",
-                showBottom = fromScreen.equals("Loan Detail", ignoreCase = true),
-                onBackClick = {
-                    onIssueBackClick(fromScreen = fromScreen, navController = navController)
-                },
-                onClick = {
-                    onRaiseIssueClick(
-                        orderIssuesResponse = orderIssuesResponse, navController = navController,
-                        orderId = orderId, providerId = providerId, loanState = loanState
-                    )
+
+            val issues =
+                if (issueList != null) issueList.data?.pageData?.issues else
+                    orderIssuesResponse?.data?.data
+            issues?.let {
+
+                FixedTopBottomScreen(
+                    navController = navController, isSelfScrollable = issues.isEmpty(), buttonText = "Raise Issue",
+                    showBottom = fromScreen.equals("Loan Detail", ignoreCase = true),
+                    onBackClick = {
+                        onIssueBackClick(fromScreen = fromScreen, navController = navController)
+                    },
+                    onClick = {
+                        onRaiseIssueClick(
+                            orderIssuesResponse = orderIssuesResponse, navController = navController,
+                            orderId = orderId, providerId = providerId, loanState = loanState
+                        )
+                    }
+                ) {
+                    if (it.isEmpty()) {
+                        EmptyListScreen()
+                    } else {
+                        Row {
+                            StartingText(
+                                text = stringResource(id = R.string.issue_list),
+                                textColor = appBlueTitle,
+                                start = 30.dp,
+                                end = 30.dp,
+                                top = 10.dp,
+                                bottom = 5.dp,
+                                style = normal32Text700
+                            )
+                        }
+
+                        IssueListScreen(navController, issues, fromFlow = fromFlow)
+                    }
+
                 }
-            ) {
-                Row {
-                    StartingText(
-                        text = stringResource(id = R.string.issue_list), textColor = appBlueTitle,
-                        start = 30.dp, end = 30.dp, top = 10.dp, bottom = 5.dp,
-                        style = normal32Text700
-                    )
-                }
-                val issues =
-                    if (issueList != null) issueList.data?.pageData?.issues else orderIssuesResponse?.data?.data
-                IssueListScreen(navController, issues, fromFlow = fromFlow)
             }
         } else {
             if (fromScreen.equals("Loan Detail", ignoreCase = true)) {
@@ -140,6 +164,25 @@ fun IssueListView(
                 createIssueViewModel.getIssueListForUser(context, IssueListBody(1, 10))
             }
         }
+    }
+}
+
+
+@Composable
+fun EmptyListScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(R.string.no_existing_issues),
+            textAlign = TextAlign.Center, fontSize = 32.sp, color = negativeGray,
+            fontFamily = FontFamily(Font(R.font.robotocondensed_regular)),
+            fontWeight = FontWeight(800),
+
+            )
     }
 }
 

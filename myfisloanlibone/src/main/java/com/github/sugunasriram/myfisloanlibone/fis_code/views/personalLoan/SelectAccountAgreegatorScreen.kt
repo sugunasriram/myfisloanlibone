@@ -1,8 +1,6 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan
 
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -10,10 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
-import com.github.sugunasriram.myfisloanlibone.LoanLib
-import com.github.sugunasriram.myfisloanlibone.MainActivity
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.FixedTopBottomScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.SpaceTextWithRadio
@@ -22,6 +17,8 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToWeb
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.BankItem
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.lightishGray
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
+import com.github.sugunasriram.myfisloanlibone.fis_code.utils.KycUrlData
+import kotlinx.serialization.json.Json
 
 val bankList = arrayListOf<BankItem?>(
     BankItem(
@@ -75,8 +72,20 @@ fun onButtonClicked(
     context: Context
 ) {
     if (selectedOption != null) {
+//        navigateToLoanOffersScreen(navController,purpose, fromFlow)
+        val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
+        val kycUrlData = json.decodeFromString(KycUrlData.serializer(), purpose)
+        if (kycUrlData.url.isNotEmpty()) {
+            navigateToWebViewFlowOneScreen(
+                navController = navController,
+                purpose = "GetUserStatus Flow",
+                fromFlow = fromFlow,
+                id = kycUrlData.id,
+                transactionId = kycUrlData.transactionId,
+                url = kycUrlData.url
+            )
+        }
 
-        navigateToWebViewFlowOneScreen(navController, purpose, fromFlow)
     } else {
         CommonMethods().toastMessage(
             context = context,

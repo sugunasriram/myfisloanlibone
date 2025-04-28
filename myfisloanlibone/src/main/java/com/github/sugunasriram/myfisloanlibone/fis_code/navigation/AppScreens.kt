@@ -9,13 +9,14 @@ sealed class AppScreens(var route: String) {
     object HomePageScreen : AppScreens("home_page_screen")
     object RegisterScreen : AppScreens("register_screen")
     object OtpScreen : AppScreens("otp_screen")
-    object OtpVerifyScreen : AppScreens("otp_verify_screen")
+    object OtpVerifiedScreen : AppScreens("otp_verify_screen")
     object UserDetailScreen : AppScreens("user_detail_screen")
     object UserProfileScreen : AppScreens("user_profile_screen")
     object LoanStatusScreen : AppScreens("loan_status_screen")
     object LoanListScreen : AppScreens("loan_list_screen")
     object LanguageSelectionScreen : AppScreens("language_selection_screen")
     object LoanStatusDetailScreen : AppScreens("loan_status_detail_screen")
+    object LoanOffersScreen : AppScreens("loan_offers_screen")
     object LoanOffersListScreen : AppScreens("loan_offers_list_screen")
     object LoanOffersListDetailScreen : AppScreens("loan_offers_list_detail_screen")
     object LoanSummary : AppScreens("dashboard_screen")
@@ -27,7 +28,6 @@ sealed class AppScreens(var route: String) {
     object LoanProcessScreen : AppScreens("loan_process_screen")
     object AnnualIncomeScreen : AppScreens("annual_income_screen")
     object ReviewDetailsScreen : AppScreens("review_detail_screen")
-    object ReviewDetailsScreenForPF : AppScreens("review_detail_screen_for_pf")
     object BankKycVerificationScreen : AppScreens("bank_kyc_verification_screen")
     object LoanDisbursementScreen : AppScreens("loan_disbursement_screen")
     object AccountDetailsScreen : AppScreens("account_details_screen")
@@ -67,6 +67,9 @@ sealed class AppScreens(var route: String) {
 
     //Purchase Finance
     object DownPaymentScreen : AppScreens("down_payment_screen")
+    object PfLoanOfferListScreen : AppScreens("pf_loan_offer_screen")
+    object PfInvoiceLoanOfferScreen : AppScreens("pf_invoice_loan_offer_screen")
+    object PfKycWebViewScreen : AppScreens("pf_kyc_web_view_screen")
 
     //Documents
     object TermsConditionsScreen :AppScreens("terms_conditions_screen")

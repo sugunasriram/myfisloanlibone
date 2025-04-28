@@ -95,7 +95,7 @@ class GstInvoiceLoanViewModel : ViewModel() {
         context: Context, gstin: String,checkForAccessToken: Boolean = true
     ) {
         kotlin.runCatching {
-            ApiRepository.gstInvoices(gstin = gstin)
+            ApiRepository.gstInvoices(gstIn = gstin)
         }.onSuccess { response ->
             handleInvoiceSuccess(response = response)
         }.onFailure { error ->

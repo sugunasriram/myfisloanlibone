@@ -197,3 +197,39 @@ val bold14Text500 = TextStyle(
     fontWeight = FontWeight(500),
     letterSpacing = 0.14.sp,
 )
+
+val robotoSerifNormal24Text500 = TextStyle(
+    fontSize = 24.sp,
+    lineHeight = 35.sp,
+    fontFamily = FontFamily(Font(R.font.roboto_serif_regular)),
+    fontWeight = FontWeight(500),
+    letterSpacing = 0.14.sp,
+)
+
+val robotoSerifNormal16Text500 = TextStyle(
+    fontSize = 16.sp,
+    lineHeight = 21.sp,
+    fontFamily = FontFamily(Font(R.font.roboto_serif_regular)),
+    fontWeight = FontWeight(500),
+    letterSpacing = 0.sp,
+)
+
+val semibold14Text500 = TextStyle(
+    fontSize = 14.sp,
+    lineHeight = 21.sp,
+    fontFamily = FontFamily(Font(R.font.roboto_serif_semi_bold)),
+    fontWeight = FontWeight(700),
+    letterSpacing = 0.14.sp,
+)
+
+
+val semibold32Text500 = TextStyle(
+    fontSize = 32.sp,
+    lineHeight = 35.sp,
+    fontFamily = FontFamily(Font(R.font.roboto_serif_semi_bold)),
+    fontWeight = FontWeight(700),
+    letterSpacing = 0.14.sp,
+)
+
+
+

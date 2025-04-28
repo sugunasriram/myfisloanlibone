@@ -46,14 +46,16 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateSignI
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToBankKycVerificationScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToFormRejectedScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToGstInvoiceLoanScreen
-import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanStatusScreen
-import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.UserStatusItem
-import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstData
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanOffersScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToUpdateProfileScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.ProfileResponse
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.Offer
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstSearchData
+import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstSearchResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.SearchModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.SearchResponseModel
+import com.github.sugunasriram.myfisloanlibone.fis_code.viewModel.auth.RegisterViewModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.webview.NavigateToWebView
-import kotlinx.serialization.builtins.ListSerializer
-//import com.github.sugunasriram.myfisloanlibone.fis_code.views.gstLoan.json
 import kotlinx.serialization.json.Json
 
 
@@ -61,6 +63,7 @@ import kotlinx.serialization.json.Json
 fun ApplyByCategoryScreen(navController: NavHostController) {
 
     val userStatusViewModel: UserStatusViewModel = viewModel()
+    val registerViewModel: RegisterViewModel = viewModel()
 
     val showInternetScreen by userStatusViewModel.showInternetScreen.observeAsState(false)
     val showTimeOutScreen by userStatusViewModel.showTimeOutScreen.observeAsState(false)
@@ -76,6 +79,8 @@ fun ApplyByCategoryScreen(navController: NavHostController) {
     val userStatus by userStatusViewModel.userStatus.collectAsState()
 
     val navigationToSignIn by userStatusViewModel.navigationToSignIn.collectAsState()
+    val userDetails by registerViewModel.getUserResponse.collectAsState()
+    val userDetailsAPILoading by registerViewModel.inProgress.collectAsState()
 
     val activity = LocalContext.current as? Activity
     val context = LocalContext.current
@@ -88,12 +93,13 @@ fun ApplyByCategoryScreen(navController: NavHostController) {
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
             SelectingFlow(
                 checkingStatus = checkingStatus, navController = navController, context = context,
                 userStatus = userStatus, userStatusViewModel = userStatusViewModel,
-                checked = checked,showLoader = showLoader,errorMessage = errorMessage
+                checked = checked,showLoader = showLoader,errorMessage = errorMessage,
+                userDetails=userDetails , userDetailsAPILoading = userDetailsAPILoading
             )
         }
     }
@@ -104,7 +110,7 @@ fun ApplyByCategoryScreen(navController: NavHostController) {
 fun SelectingFlow(
     checkingStatus: Boolean, navController: NavHostController, userStatus: UserStatus?,
     userStatusViewModel: UserStatusViewModel, context: Context, checked: Boolean,
-    showLoader: Boolean,errorMessage: String
+    showLoader: Boolean,errorMessage: String, userDetails: ProfileResponse?,userDetailsAPILoading : Boolean
 ) {
     var setFlow by remember { mutableStateOf("") }
     val  scope = rememberCoroutineScope()
@@ -140,16 +146,17 @@ fun SelectingFlow(
             if(apiCalled){
                 scope.launch {
                     delay(60000)
-                    userStatusViewModel.getUserStaus(loanType = "PERSONAL_LOAN", context = context)
+                    userStatusViewModel.getUserStatus(loanType = "PERSONAL_LOAN", context = context)
                     apiCalled = false
                 }
             }
 
             UnexpectedErrorScreen(
+                navController = navController,
                 errorMsgShow = false, errorText = stringResource(id =R.string.request_is_still),
                 errorMsg = stringResource(id = R.string.middle_loan_error_message),
                 onClick = {
-                    userStatusViewModel.getUserStaus(
+                    userStatusViewModel.getUserStatus(
                         loanType = "PERSONAL_LOAN", context = context
                     )
                 }
@@ -183,9 +190,37 @@ fun SelectingFlow(
                 onLoanSelected = { loanType ->
                     setFlow = loanType
                     when (loanType) {
-                        "Invoice Loan" -> userStatusViewModel.getUserStaus(
-                            loanType = "INVOICE_BASED_LOAN", context = context
-                        )
+                        "Invoice Loan" -> {
+                            val requiredFields = listOf(
+                                userDetails?.data?.firstName,
+                                userDetails?.data?.lastName,
+                                userDetails?.data?.email,
+                                userDetails?.data?.dob,
+                                userDetails?.data?.mobileNumber,
+                                userDetails?.data?.panNumber,
+                                userDetails?.data?.gender,
+                                userDetails?.data?.employmentType,
+                                userDetails?.data?.companyName,
+                                userDetails?.data?.address1,
+                                userDetails?.data?.city1,
+                                userDetails?.data?.pincode1,
+                            )
+                            if (requiredFields.any { it.isNullOrEmpty() }) {
+                                navigateToUpdateProfileScreen(navController,fromFlow = loanType)
+                                CommonMethods().toastMessage(
+                                    context,
+                                    "Please update your profile details"
+                                )
+                            } else if (userDetails?.data?.udyamNumber.isNullOrEmpty()) {
+                                navigateToUpdateProfileScreen(navController, fromFlow = loanType)
+                                CommonMethods().toastMessage(context, "Update UDYAM number")
+                            }else{
+                                userStatusViewModel.getUserStatus(
+                                    loanType = "INVOICE_BASED_LOAN", context = context
+                                )
+                            }
+
+                        }
 
 //                        "Invoice Loan" ->
 //                            navigateToLoanProcessScreen(
@@ -193,14 +228,65 @@ fun SelectingFlow(
 //                            navController = navController, statusId = 9, transactionId = "Sugu"
 //                        )
 
-                        "Personal Loan" -> userStatusViewModel.getUserStaus(
-                            loanType = "PERSONAL_LOAN", context = context
-                        )
+                        "Personal Loan" ->{
+                            val requiredFields = listOf(
+                                userDetails?.data?.firstName,
+                                userDetails?.data?.lastName,
+                                userDetails?.data?.email,
+                                userDetails?.data?.officialEmail,
+                                userDetails?.data?.mobileNumber,
+                                userDetails?.data?.dob,
+                                userDetails?.data?.panNumber,
+                                userDetails?.data?.gender,
+                                userDetails?.data?.employmentType,
+                                userDetails?.data?.companyName,
+                                userDetails?.data?.address1,
+                                userDetails?.data?.city1,
+                                userDetails?.data?.pincode1,
+                            )
 
-                        "Purchase Finance" -> navigateToLoanProcessScreen(
-                            responseItem = "No Need", offerId = "1234", fromFlow = setFlow,
-                            navController = navController, statusId = 17, transactionId = "Sugu"
-                        )
+
+                            if (requiredFields.any { it.isNullOrEmpty() } && !userDetailsAPILoading) {
+                                navigateToUpdateProfileScreen(navController, fromFlow = loanType)
+                                CommonMethods().toastMessage(
+                                    context,
+                                    "Please update your profile details"
+                                )
+                            } else {
+                                userStatusViewModel.getUserStatus(
+                                    loanType = "PERSONAL_LOAN", context = context
+                                )
+
+                            }
+                        }
+
+                        "Purchase Finance" -> {
+                            val requiredFields = listOf(
+                                userDetails?.data?.firstName,
+                                userDetails?.data?.lastName,
+                                userDetails?.data?.email,
+                                userDetails?.data?.dob,
+                                userDetails?.data?.mobileNumber,
+                                userDetails?.data?.panNumber,
+                                userDetails?.data?.gender,
+                                userDetails?.data?.employmentType,
+                                userDetails?.data?.companyName,
+                                userDetails?.data?.address1,
+                                userDetails?.data?.city1,
+                                userDetails?.data?.pincode1,
+                            )
+                            if (requiredFields.any { it.isNullOrEmpty() }) {
+                                navigateToUpdateProfileScreen(navController,fromFlow = loanType)
+                                CommonMethods().toastMessage(
+                                    context,
+                                    "Please update your profile details"
+                                )
+                            } else {
+                                userStatusViewModel.getUserStatus(
+                                    loanType = "PURCHASE_FINANCE", context = context
+                                )
+                            }
+                        }
                     }
                 }
             )
@@ -223,17 +309,17 @@ fun LoanSelectionScreen(
             top = 25.dp, textColor = appDarkTeal, style = bold36Text700
         )
 
-        CurvedPrimaryButtonFull(
-            text = stringResource(id = R.string.gst_invoice_loan),
-            modifier = Modifier.padding(horizontal = 30.dp, vertical = 40.dp)
-        ) {
-            onLoanSelected("Invoice Loan")
-        }
+//        CurvedPrimaryButtonFull(
+//            text = stringResource(id = R.string.gst_invoice_loan),
+//            modifier = Modifier.padding(horizontal = 30.dp, vertical = 40.dp)
+//        ) {
+//            onLoanSelected("Invoice Loan")
+//        }
 
 //        Spacer(modifier = Modifier.height(48.dp))
         CurvedPrimaryButtonFull(
             text = stringResource(id = R.string.personal_loan),
-            modifier = Modifier.padding(start = 30.dp, end = 30.dp, bottom = 20.dp)
+            modifier = Modifier.padding(horizontal = 30.dp, vertical = 40.dp)
         ) {
             onLoanSelected("Personal Loan")
         }
@@ -254,6 +340,7 @@ fun PersonalDecidedFlowPreview(){
     val userStatusResponse = "{\n" +
             "    \"status\": true,\n" +
             "    \"data\": {\n" +
+            "           \"txn_id\": \"41129b37-4ee9-5841-a86b-e3cf6ea790ec\" \n" +
             "        \"data\": [\n" +
             "            {\n" +
             "                \"_id\": \"6010b8c4-2d0d-50da-b309-1b9f76a70473\",\n" +
@@ -395,6 +482,7 @@ fun PersonalDecidedFlowPreview(){
             "                ]\n" +
             "            }\n" +
             "        ]\n" +
+
             "    },\n" +
             "    \"statusCode\": 200\n" +
             "}"
@@ -409,21 +497,47 @@ fun PersonalDecidedFlowPreview(){
 
 @Composable
 fun PersonalDecidedFlow(status: UserStatus?, navController: NavHostController, fromFlow: String) {
-    if (status?.data == null) {
+    if (status?.data == null || status?.data?.data?.any { it == null } == true) {
+        Log.d("test status: ", "null")
         navigateToPersonaLoanScreen(navController = navController, fromFlow = "Personal Loan")
-    } else if (status?.data?.data?.lastOrNull()?.step.equals("loan_select_form_submission_failed", true)){
+    } else if (status?.data?.data?.lastOrNull()?.step.equals(
+            "loan_select_form_submission_PENDING",
+            true
+        ) ||
+        status?.data?.data?.lastOrNull()?.step.equals("loan_select_form_submission_REJECTED", true)
+    ) {
         navigateToFormRejectedScreen(
             navController = navController,
             errorTitle = stringResource(id = R.string.kyc_failed),
-            fromFlow = fromFlow, errorMsg= stringResource(id = R.string.form_submission_rejected_or_pending)
+            fromFlow = fromFlow, errorMsg =
+            if (status?.data?.data?.lastOrNull()?.step.equals("loan_select_form_submission_PENDING", true)
+            ) {
+                stringResource(id = R.string.form_submission_pending)
+            } else {
+                stringResource(id = R.string.form_submission_rejected)
+            }
         )
-    } else if (status?.data?.data?.lastOrNull()?.step.equals ("emandate_form_submission_failed", true)){
+    } else if (status?.data?.data?.lastOrNull()?.step.equals(
+            "emandate_form_submission_PENDING",
+            true
+        ) ||
+        status?.data?.data?.lastOrNull()?.step.equals("emandate_form_submission_REJECTED", true)
+    ) {
         navigateToFormRejectedScreen(
             navController = navController,
             errorTitle = stringResource(id = R.string.emandate_failed),
-            fromFlow = fromFlow, errorMsg= stringResource(id = R.string.form_submission_rejected_or_pending)
+            fromFlow = fromFlow,
+            errorMsg = if (status?.data?.data?.lastOrNull()?.step.equals(
+                    "emandate_form_submission_PENDING",
+                    true
+                )
+            ) {
+                stringResource(id = R.string.form_submission_pending)
+            } else {
+                stringResource(id = R.string.form_submission_rejected)
+            }
         )
-    }else if (status?.data?.data?.lastOrNull()?.step.equals ("account_information_form_submission_failed", true)){
+    } else if (status?.data?.data?.lastOrNull()?.step.equals ("account_information_form_submission_failed", true)){
         navigateToFormRejectedScreen(
             navController = navController,
             errorTitle = stringResource(id = R.string.repayment_failed),
@@ -435,23 +549,46 @@ fun PersonalDecidedFlow(status: UserStatus?, navController: NavHostController, f
             errorTitle = stringResource(id = R.string.loan_agreement_failed),
             fromFlow = fromFlow, errorMsg= stringResource(id = R.string.form_submission_rejected_or_pending)
         )
-    }else if (status?.data?.data?.lastOrNull()?.step.equals ("search", true)){
+    } else if (status?.data?.data?.firstOrNull()?.step.equals("search", true)) {
+
+        val offerList = status?.data?.data?.lastOrNull()?.offerResponse?.lastOrNull()?.data?.map { data ->
+            Offer(
+                data.offer,
+                data.id
+            )
+        }
+
         val searchResponse = SearchResponseModel(
             id = status?.data?.data?.lastOrNull()?.id,
-            url = status?.data?.data?.lastOrNull()?.url?:"",
-            transactionId = status?.data?.txnId
+            url = status?.data?.data?.lastOrNull()?.url ?: "",
+            transactionId = status?.data?.txnId,
+            consentResponse = status?.data?.data?.firstOrNull()?.consentResponse,
+            offerResponse = offerList
         )
 
-        // Create an instance of SearchModel
-        val searchModel = SearchModel(
-            data = searchResponse,
-            status = true,
-            statusCode = 200
-        )
-        NavigateToWebView(
-            searchResponse = searchModel, gstSearchResponse = null,
-            fromFlow = fromFlow, navController = navController
-        )
+        if (offerList.isNullOrEmpty()) {
+            val searchModel = SearchModel(
+                data = searchResponse,
+                status = true,
+                statusCode = 200
+            )
+
+            NavigateToWebView(
+                searchModel = searchModel, gstSearchResponse = null,
+                fromFlow = fromFlow, navController = navController, searchResponse = searchModel
+            )
+        } else {
+
+            val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
+            val searchJson = json.encodeToString(
+                SearchModel.serializer(),
+                SearchModel(data = searchResponse, status = true, statusCode = 200)
+            )
+            navigateToLoanOffersScreen(
+                navController,
+                stringResource(R.string.getUerFlow), fromFlow, searchJson
+            )
+        }
     }
     else {
         if (status.data.url != null) {
@@ -509,7 +646,7 @@ fun PersonalDecidedFlow(status: UserStatus?, navController: NavHostController, f
                                 }
                             }
                         }
-                    } else if (step.equals("LOAN_SELECT_AFTER_EKYC_SUBMISSION")) {
+                    } else if (step.equals("loan_select_form_submission_APPROVED")) {
                         status.data.data.forEach { userItem ->
                             userItem?.id?.let { id ->
                                 transactionId?.let {transactionId->
@@ -595,6 +732,23 @@ fun InvoiceDecidedFlow(status: UserStatus?, navController: NavHostController, fr
             navController = navController,
             errorTitle = stringResource(id = R.string.loan_agreement_failed),
             fromFlow = fromFlow, errorMsg=stringResource(id = R.string.form_submission_rejected_or_pending)
+        )
+    }else if (status?.data?.data?.lastOrNull()?.step.equals ("search", true)){
+        val searchResponseData = GstSearchData(
+            id = status?.data?.data?.lastOrNull()?.id,
+            url = status?.data?.data?.lastOrNull()?.url?:"",
+            transactionId = status?.data?.txnId
+        )
+
+        // Create an instance of SearchModel
+        val searchResponse = GstSearchResponse(
+            data = searchResponseData,
+            status = true,
+            statusCode = 200
+        )
+        NavigateToWebView(
+            searchResponse = null, gstSearchResponse = searchResponse,
+            fromFlow = fromFlow, navController = navController, searchModel = null
         )
     }
     else {
@@ -766,6 +920,145 @@ fun InvoiceDecidedFlow(status: UserStatus?, navController: NavHostController, fr
 
 @Composable
 fun PurchaseDecidedFlow(status: UserStatus?, navController: NavHostController, fromFlow: String) {
+    if (status?.data == null) {
+        navigateToLoanProcessScreen(
+            responseItem = "No Need", offerId = "1234", fromFlow = fromFlow,
+            navController = navController, statusId = 18, transactionId = "Sai"
+        )
+    } else if (status?.data?.data?.lastOrNull()?.step.equals("loan_select_form_submission_failed", true)){
+        navigateToFormRejectedScreen(
+            navController = navController,
+            errorTitle = stringResource(id = R.string.kyc_failed),
+            fromFlow = fromFlow, errorMsg= stringResource(id = R.string.form_submission_rejected_or_pending)
+        )
+    } else if (status?.data?.data?.lastOrNull()?.step.equals ("emandate_form_submission_failed", true)){
+        navigateToFormRejectedScreen(
+            navController = navController,
+            errorTitle = stringResource(id = R.string.emandate_failed),
+            fromFlow = fromFlow, errorMsg= stringResource(id = R.string.form_submission_rejected_or_pending)
+        )
+    }else if (status?.data?.data?.lastOrNull()?.step.equals ("account_information_form_submission_failed", true)){
+        navigateToFormRejectedScreen(
+            navController = navController,
+            errorTitle = stringResource(id = R.string.repayment_failed),
+            fromFlow = fromFlow, errorMsg= stringResource(id = R.string.form_submission_rejected_or_pending)
+        )
+    }else if (status?.data?.data?.lastOrNull()?.step.equals ("loan_agreement_form_submission_failed", true)){
+        navigateToFormRejectedScreen(
+            navController = navController,
+            errorTitle = stringResource(id = R.string.loan_agreement_failed),
+            fromFlow = fromFlow, errorMsg= stringResource(id = R.string.form_submission_rejected_or_pending)
+        )
+    }else if (status?.data?.data?.lastOrNull()?.step.equals ("search", true)){
+        val searchResponse = SearchResponseModel(
+            id = status?.data?.data?.lastOrNull()?.id,
+            url = status?.data?.data?.lastOrNull()?.url?:"",
+            transactionId = status?.data?.txnId
+        )
+
+        // Create an instance of SearchModel
+        val searchModel = SearchModel(
+            data = searchResponse,
+            status = true,
+            statusCode = 200
+        )
+        NavigateToWebView(
+            searchResponse = searchModel, gstSearchResponse = null,
+            fromFlow = fromFlow, navController = navController, searchModel = searchModel
+        )
+    }
+    else {
+        if (status.data.url != null) {
+            status.data.url.let { webUrl ->
+                val transactionId = status?.data?.data?.get(0)?.data?.get(0)?.txnId
+                transactionId.let { transactionId ->
+                    transactionId?.let { Log.d("test transactionId: ", it) }
+
+                    status.data.id?.let { searchId ->
+                        transactionId?.let {
+                            SearchWebView(
+                                navController = navController, urlToOpen = webUrl,
+                                searchId = searchId, transactionId = it, fromFlow = fromFlow,
+                                pageContent = {}
+                            )
+                        }
+                    }
+
+                }
+            }
+        } else {
+            val transactionId = status?.data?.txnId
+
+            transactionId?.let { Log.d("test transactionId: ", it) }
+
+
+            status.data.data?.forEach { data ->
+                data?.step?.let { step ->
+                    if (step.equals("post_search", true)) {
+                        transactionId?.let {
+                            navigateToLoanProcessScreen(
+                                navController, statusId = 20, transactionId = transactionId,
+                                responseItem =
+                                "No Need Response Item",
+                                offerId = "1234", fromFlow = fromFlow
+                            )
+                        }
+                    } else if (step.equals("offer_confirm", true)) {
+                        status.data.data.forEach { userItem ->
+                            userItem?.data?.forEach { item ->
+                                item?.fromUrl?.let { loanAgreementUrl ->
+                                    userItem.id?.let { id ->
+                                        transactionId?.let {transactionId->
+                                            navigateToLoanProcessScreen(
+                                                transactionId = transactionId,
+                                                offerId = id, responseItem = loanAgreementUrl,
+                                                navController = navController, statusId = 13,
+                                                fromFlow = fromFlow
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else if (step.equals("loan_approved", true)) {
+                        status.data.data.forEach { userItem ->
+                            userItem?.data?.forEach { item ->
+                                item?.fromUrl?.let { verificationUrl ->
+                                    userItem.id?.let { id ->
+                                        transactionId?.let { transactionId ->
+                                            navigateToLoanProcessScreen(
+                                                transactionId = transactionId,
+                                                offerId = id, responseItem = verificationUrl,
+                                                navController = navController, statusId = 5,
+                                                fromFlow = fromFlow
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else if (step.equals("loan_agreement_approved", true)) {
+                        status.data.data.forEach { userItem ->
+                            userItem?.data?.forEach { item ->
+                                item?.fromUrl?.let { loanAgreementUrl ->
+                                    userItem.id?.let { id ->
+                                        transactionId?.let {transactionId->
+                                            navigateToLoanProcessScreen(
+                                                transactionId = transactionId,
+                                                offerId = id, responseItem = loanAgreementUrl,
+                                                navController = navController, statusId = 22,
+                                                fromFlow = fromFlow
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Preview

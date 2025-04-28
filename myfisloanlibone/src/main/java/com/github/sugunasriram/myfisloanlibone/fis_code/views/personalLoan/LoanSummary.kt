@@ -91,7 +91,7 @@ fun LoanSummaryScreen(
         showServerIssueScreen -> CommonMethods().ShowServerIssueErrorScreen(navController)
         unexpectedErrorScreen -> CommonMethods().ShowUnexpectedErrorScreen(navController)
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
-        middleLoan -> CommonMethods().ShowMiddleLoanErrorScreen(navController, errorMessage)
+        middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
             LoanSummaryDetail(
                 loanListLoading = loanListLoading,
@@ -169,6 +169,8 @@ fun ConsentHandling(
     } else {
         if (fromFlow.equals("Personal Loan", ignoreCase = true)) {
             loanAgreementViewModel.getCustomerLoanList("PERSONAL_LOAN", context)
+        } else if(fromFlow.equals("Purchase Finance", ignoreCase = true)) {
+            loanAgreementViewModel.getCustomerLoanList("PURCHASE_FINANCE", context)
         } else {
             loanAgreementViewModel.getCustomerLoanList("INVOICE_BASED_LOAN", context)
         }
@@ -333,7 +335,7 @@ fun DisplayLoanTenureAmount(offer: OfferResponseItem) {
                 ) {
                     HeaderNextRowValue(
                         textHeader = stringResource(id = R.string.loan_tenure),
-                        textValue = tag.value,
+                        textValue = tag.value?:"",
                         textColorHeader = appBlack,
                         textColorValue = appBlack,
                         modifier = Modifier
@@ -348,7 +350,7 @@ fun DisplayLoanTenureAmount(offer: OfferResponseItem) {
         found = false
         offer.itemTags?.forEach { itemTag ->
             itemTag?.tags?.forEach { tag ->
-                if (tag.key.contains("INSTALLMENT_AMOUNT", ignoreCase = true)) {
+                if (tag.key.contains("INSTALLMENT_AMOUNT", ignoreCase = true) && !tag.value.isNullOrEmpty()) {
                     val installmentAmount = tag.value
                     HeaderNextRowValue(
                         textHeader = stringResource(id = R.string.next_emi_due_amount) + " (INR)",
@@ -391,7 +393,7 @@ fun DisplayInterestAmount(offer: OfferResponseItem) {
                 ) {
                     HeaderNextRowValue(
                         textHeader = stringResource(id = R.string.rate_of_interest),
-                        textValue = tag.value,
+                        textValue = tag.value?:"",
                         textColorHeader = appBlack,
                         textColorValue = appBlack,
                         modifier = Modifier
@@ -406,8 +408,5 @@ fun DisplayInterestAmount(offer: OfferResponseItem) {
         }
     }
 }
-
-
-
 
 
