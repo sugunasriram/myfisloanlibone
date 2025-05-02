@@ -12,6 +12,7 @@ import androidx.navigation.NavHostController
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.FixedTopBottomScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.SpaceTextWithRadio
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanOffersScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToSelectBankScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToWebViewFlowOneScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.BankItem
@@ -34,10 +35,13 @@ fun SelectAccountAgreegatorScreen(
 ) {
 
     BackHandler {
+
         if (fromFlow.equals("Invoice Loan", ignoreCase = true)) {
             navigateToSelectBankScreen(
                 navController = navController, purpose = purpose, fromFlow = fromFlow
             )
+        } else {
+            navController.popBackStack()
         }
     }
     val context = LocalContext.current
@@ -72,19 +76,28 @@ fun onButtonClicked(
     context: Context
 ) {
     if (selectedOption != null) {
-//        navigateToLoanOffersScreen(navController,purpose, fromFlow)
-        val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
-        val kycUrlData = json.decodeFromString(KycUrlData.serializer(), purpose)
-        if (kycUrlData.url.isNotEmpty()) {
-            navigateToWebViewFlowOneScreen(
-                navController = navController,
-                purpose = "GetUserStatus Flow",
-                fromFlow = fromFlow,
-                id = kycUrlData.id,
-                transactionId = kycUrlData.transactionId,
-                url = kycUrlData.url
-            )
+
+        if (fromFlow.equals(
+                "Personal Loan",
+                ignoreCase = true
+            ) || fromFlow.equals("Purchase Finance", ignoreCase = true)
+        ) {
+            val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
+            val kycUrlData = json.decodeFromString(KycUrlData.serializer(), purpose)
+            if (kycUrlData.url.isNotEmpty()) {
+                navigateToWebViewFlowOneScreen(
+                    navController = navController,
+                    purpose = "GetUserStatus Flow",
+                    fromFlow = fromFlow,
+                    id = kycUrlData.id,
+                    transactionId = kycUrlData.transactionId,
+                    url = kycUrlData.url
+                )
+            }
+        } else {
+            navigateToLoanOffersScreen(navController, purpose, fromFlow)
         }
+
 
     } else {
         CommonMethods().toastMessage(

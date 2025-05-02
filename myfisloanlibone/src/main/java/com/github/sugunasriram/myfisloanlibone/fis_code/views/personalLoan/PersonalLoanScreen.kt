@@ -1,6 +1,5 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -24,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.github.sugunasriram.myfisloanlibone.LoanLib
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CenteredMoneyImage
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.CheckBoxText
@@ -86,18 +84,6 @@ fun PersonaLoanScreen(navController: NavHostController,fromFlow:String) {
                 navController = navController, context = context, fromFlow = fromFlow
             )
         }
-
-        //Sugu - testing - to be removed  - Start
-        CurvedPrimaryButtonFull(
-            text = "Send Loan Details",
-            modifier = Modifier.padding(start = 30.dp, end = 30.dp, bottom = 20.dp, top = 40.dp),
-            backgroundColor = if(adharNumberLink) appBlue else disableColor
-        ) {
-            LoanLib.callback?.invoke(LoanLib.LoanDetails(interestRate = 5.0, loanAmount = 10000.0, tenure = 12))
-            (context as? Activity)?.finish()
-
-        }
-        //Sugu - testing - to be removed  - End
     }
 }
 

@@ -12,6 +12,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,12 +22,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.WebViewTopBar
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.AppScreens
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateApplyByCategoryScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateSignInPage
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToAAConsentApprovalScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToWebViewFlowOneScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.finance.FinanceSearchModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstSearchBody
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstSearchResponse
@@ -46,6 +52,9 @@ fun SearchWebViewScreen(
     transactionId: String,
     url: String
 ) {
+    BackHandler {
+        navigateApplyByCategoryScreen(navController)
+    }
     val webViewModel: WebViewModel = viewModel()
 
     val gstSearchResponse by webViewModel.gstSearchResponse.collectAsState()
@@ -68,31 +77,11 @@ fun SearchWebViewScreen(
         unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController)
         middleLoan -> CommonMethods().ShowNoResponseFormLendersScreen(navController)
         else -> {
-            if (fromFlow.equals("Personal Loan", ignoreCase = true)) {
                 SearchWebView(
                     navController = navController, transactionId = transactionId, urlToOpen =
                     url,
                     searchId = id, fromFlow = fromFlow, pageContent = {}
                 )
-            } else {
-                NavigateToWebView(
-                    gstSearchResponse = gstSearchResponse,
-                    fromFlow = fromFlow,
-                    navController = navController,
-                    searchResponse = SearchModel(
-                        status = true,
-                        statusCode = 200,
-                        data = SearchResponseModel(
-                            id = id,
-                            url = url,
-                            transactionId = transactionId,
-                            offerResponse = null,
-                            offers = null,
-                            consentResponse = null
-                        )
-                    ), searchModel = null
-                )
-            }
 
 //            if (webScreenLoading.value) {
 //                LoaderAnimation(
@@ -174,10 +163,13 @@ fun NavigateToWebView(
             search?.data?.transactionId?.let { transactionId ->
                 search?.data?.id?.let { id ->
                     search.data.url?.let { url ->
-                        SearchWebView(
-                            navController = navController, transactionId = transactionId,
-                            urlToOpen = url,
-                            searchId = id, fromFlow = fromFlow, pageContent = {}
+                        navigateToWebViewFlowOneScreen(
+                            navController = navController,
+                            purpose = stringResource(R.string.getUerFlow),
+                            fromFlow = fromFlow,
+                            id = id,
+                            transactionId = transactionId,
+                            url = url
                         )
                     }
                 }
@@ -188,10 +180,13 @@ fun NavigateToWebView(
             search?.data?.transactionId?.let { transactionId ->
                 search?.data?.id?.let { id ->
                     search.data.url?.let { url ->
-                        SearchWebView(
-                            navController = navController, transactionId = transactionId,
-                            urlToOpen = url,
-                            searchId = id, fromFlow = fromFlow, pageContent = {}
+                        navigateToWebViewFlowOneScreen(
+                            navController = navController,
+                            purpose = stringResource(R.string.getUerFlow),
+                            fromFlow = fromFlow,
+                            id = id,
+                            transactionId = transactionId,
+                            url = url
                         )
                     }
                 }
@@ -202,10 +197,13 @@ fun NavigateToWebView(
             search.data?.transactionId?.let { transactionId ->
                 search.data?.id?.let { id ->
                     search.data.url?.let { url ->
-                        SearchWebView(
-                            navController = navController, transactionId = transactionId,
-                            urlToOpen = url,
-                            searchId = id, fromFlow = fromFlow, pageContent = {}
+                        navigateToWebViewFlowOneScreen(
+                            navController = navController,
+                            purpose = stringResource(R.string.getUerFlow),
+                            fromFlow = fromFlow,
+                            id = id,
+                            transactionId = transactionId,
+                            url = url
                         )
                     }
                 }
@@ -255,6 +253,8 @@ fun SearchWebView(
     String,
     searchId: String, fromFlow: String, pageContent: () -> Unit
 ) {
+
+    android.util.Log.d("SearchWebView","navigation "+navController.currentDestination)
     Column(
         modifier = Modifier.fillMaxSize()
     ) {

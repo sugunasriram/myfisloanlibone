@@ -1143,7 +1143,8 @@ fun LoanAmountInterest(offer: OfferResponseItem) {
 
             HeaderNextRowValue(
                 textHeader = stringResource(id = R.string.loan) + currency,
-                textValue = CommonMethods().formatWithCommas(loanAmountValue.toDouble().toInt()),
+                textValue = if(loanAmountValue.contains("INR"))"₹ ${CommonMethods().formatWithCommas(loanAmountValue.removeINRifExist().toDouble().toInt())}" else
+                    CommonMethods().formatWithCommas(loanAmountValue.removeINRifExist().toDouble().toInt()),
                 textColorHeader = appBlack,
                 textColorValue = appBlack,
                 modifier = Modifier
@@ -1700,6 +1701,14 @@ fun String.appendINRIfMissing(): String {
         "$this INR"
     } else {
         this
+    }
+}
+
+fun String.removeINRifExist(): String{
+    return if(!this.contains("INR")){
+        this
+    }else{
+        this.split(" INR")[0]
     }
 }
 

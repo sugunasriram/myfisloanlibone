@@ -613,7 +613,8 @@
         pending currently and needs action</string>
 
     <string name="kyc_pending">KYC Pending</string>
-    <string name="emandate_failed">EMandate Failed</string>
+    <string name="emandate_failed">eMandate Failed</string>
+    <string name="esign_failed">eSign Failed</string>
     <string name="repayment_failed">Repayment Failed</string>
     <string name="loan_agreement_failed">Loan Agreement Failed</string>
     <string name="organization">Organization</string>
@@ -658,6 +659,7 @@
     <string name="please_use_min_10_characters">Please Use Min 10 Characters</string>
     <string name="first_name_should_contain_minimum_1_letters">FirstName Should Contain Minimum 1
         Character</string>
+    <string name="try_again">Try Again</string>
 
 
 </resources>

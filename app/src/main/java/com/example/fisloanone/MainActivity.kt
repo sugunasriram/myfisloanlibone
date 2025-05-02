@@ -26,6 +26,7 @@ import java.io.Serializable
 import com.github.sugunasriram.myfisloanlibone.LoanLib
 import com.github.sugunasriram.myfisloanlibone.LoanLib.PersonalDetails
 import com.github.sugunasriram.myfisloanlibone.LoanLib.ProductDetails
+import com.github.sugunasriram.myfisloanlibone.LoanLib.SessionDetails
 
 
 class MainActivity : ComponentActivity() {
@@ -57,6 +58,18 @@ class MainActivity : ComponentActivity() {
             merchantBankAccountHolderName = "Pinnacle"
         )
     }
+    private fun PopulateSessionDetails() : LoanLib.SessionDetails {
+        return SessionDetails(
+            sessionId = "83f29f24-704d-529f-a3b4-4a5560cd2c70"
+        )
+
+    }
+
+    private fun EmptySessionDetails(): LoanLib.SessionDetails {
+        return SessionDetails(
+            sessionId = "" // Provide a default value for sessionId
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,7 +99,8 @@ class MainActivity : ComponentActivity() {
         LoanLib.LaunchFISAppWithParamsAndCallback(
             context = this,
             personalDetails = PopulatePersonalDetails(),
-            productDetails = PopulateProductDetails()
+            productDetails = PopulateProductDetails(),
+            sessionDetails = PopulateSessionDetails(),
         ) { loanDetails ->
             // Handle the callback with loanDetails
             println("Loan Amount: ${loanDetails.loanAmount}")

@@ -61,11 +61,13 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.app.MainActivity
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.WebViewTopBar
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToAnimationLoader
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToFormRejectedScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToKYCFailedScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiPaths
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository.handleAuthGetAccessTokenApi
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEData
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.sse.SSEViewModel
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
+import com.github.sugunasriram.myfisloanlibone.fis_code.views.negitiveScreen.KYCFailedScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
@@ -130,15 +132,10 @@ fun WebKycScreen(
             postDelayed({
                 if (sseEvents.isEmpty()) {
                     if (!lateNavigate) {
-                        Log.d("KyCScreen", "At looper - Sugu")
-
-                        navigateToAnimationLoader(
-                            navController = navController, transactionId= transactionId, id = id,
-                            fromFlow = fromFlow
-                        )
+                        navigateToKYCFailedScreen(navController = navController)
                     }
                 }
-            }, 15 * 60 * 1000) /* Changing to 15 mins, as P2P KYC is taking time, reduce back to 5
+            }, 5 * 60 * 1000) /* Changing to 15 mins, as P2P KYC is taking time, reduce back to 5
              mins later */
         }
     }

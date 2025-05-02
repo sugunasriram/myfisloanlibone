@@ -541,14 +541,14 @@ fun SomethingWentWrongScreen(navController: NavHostController) {
             Column(Modifier.padding(10.dp)) {
 
                 StartingText(
-                    text = "Something went wrong",
+                    text = stringResource(R.string.something_went_wrong),
                     textColor = errorGray,
                     style = robotoSerifNormal24Text500,
                     alignment = Alignment.TopCenter,
                 )
 
                 StartingText(
-                    text = "Please try again after sometime",
+                    text = stringResource(R.string.please_try_again_after_sometime),
                     textColor = errorGray,
                     style = normal20Text400,
                     alignment = Alignment.TopCenter,
@@ -556,7 +556,7 @@ fun SomethingWentWrongScreen(navController: NavHostController) {
                 )
 
                 StartingText(
-                    text = "Try Again", textColor = appBlue, style = robotoSerifNormal16Text500,
+                    text = stringResource(R.string.try_again), textColor = appBlue, style = robotoSerifNormal16Text500,
                     alignment = Alignment.TopCenter, top = 10.dp
                 )
             }

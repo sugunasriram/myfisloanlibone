@@ -1310,9 +1310,7 @@ fun LoanProcessScreen(
                 isSelfScrollable = false,
                 buttonText = stringResource(id = R.string.next),
                 onClick = {
-                    navigateToAccountAgreegatorScreen(
-                        navController = navController, purpose = responseItem, fromFlow = fromFlow
-                    )
+                    navigateToLoanOffersScreen(navController, fromFlow = fromFlow, offerItem = responseItem)
                 }
             )
             {
@@ -1694,7 +1692,7 @@ fun SubHeading(@DrawableRes image: Int, text: String, subProcess: Boolean) {
 @Composable
 fun LoanProcessScreenPreview() {
     LoanProcessScreen(
-        navController = rememberNavController(), transactionId = "12232", statusId = "4",
+        navController = rememberNavController(), transactionId = "12232", statusId = "19",
         responseItem = "String",
         offerId = "1234", fromFlow = "Personal Loan"
     )

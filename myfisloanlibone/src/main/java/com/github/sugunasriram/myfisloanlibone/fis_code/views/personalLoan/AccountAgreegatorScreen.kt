@@ -20,6 +20,8 @@ import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.FixedTopBottomScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.StartImageWithText
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.StartingText
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateApplyByCategoryScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanOffersScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanProcessScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToSelectBankScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.ui.theme.appBlueTitle
@@ -91,12 +93,14 @@ fun onGoBackClick(navController: NavHostController, fromFlow: String, loanPurpos
             offerId = "1234", fromFlow = fromFlow
         )
     } else if (fromFlow.equals("Personal Loan", ignoreCase = true)) {
-        navigateToLoanProcessScreen(
-            navController = navController, transactionId="Sugu",
-            statusId = 8, responseItem = loanPurpose,
-            offerId = "1234", fromFlow = fromFlow
-        )
+        navController.popBackStack()
+//        navigateToLoanProcessScreen(
+//            navController = navController, transactionId="Sugu",
+//            statusId = 8, responseItem = loanPurpose,
+//            offerId = "1234", fromFlow = fromFlow
+//        )
     }
+
 }
 
 //@Preview(widthDp = 352, heightDp = 737)

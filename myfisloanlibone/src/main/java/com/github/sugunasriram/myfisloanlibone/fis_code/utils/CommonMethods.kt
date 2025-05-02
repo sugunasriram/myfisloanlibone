@@ -372,8 +372,11 @@ class CommonMethods {
 
     fun setFromFlow(fromFlow: String): String {
         val loanType = if (fromFlow.equals("Personal Loan", ignoreCase = true) ||
-            fromFlow.equals("Personal_Loan", ignoreCase = true)) {
+            fromFlow.equals("Personal_Loan", ignoreCase = true)
+        ) {
             "PERSONAL_LOAN"
+        } else if (fromFlow.equals("Purchase Finance", ignoreCase = true)) {
+            "PURCHASE_FINANCE"
         } else {
             "INVOICE_BASED_LOAN"
         }

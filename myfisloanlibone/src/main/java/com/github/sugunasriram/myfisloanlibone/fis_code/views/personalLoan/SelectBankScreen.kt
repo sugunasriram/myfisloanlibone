@@ -42,6 +42,8 @@ fun SelectBankScreen(navController: NavHostController, purpose: String, fromFlow
             navigateToAccountAgreegatorScreen(
                 navController = navController, purpose = purpose, fromFlow = fromFlow
             )
+        }else{
+            navController.popBackStack()
         }
     }
     val (selectedOption, onOptionSelected) = remember { mutableStateOf<String?>(null) }

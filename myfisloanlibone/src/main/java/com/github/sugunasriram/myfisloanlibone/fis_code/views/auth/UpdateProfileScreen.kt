@@ -427,7 +427,7 @@ fun UpdateProfileScreen(navController: NavHostController,fromFlow:String) {
                                         .clickable { udyamNumberFocus.requestFocus() }
                                         .size(20.dp))
                             },
-                            keyboardActions = KeyboardActions(onNext = { pinCodeFocus1.requestFocus() }),
+                            keyboardActions = KeyboardActions(onNext = { officialAddressFocus.requestFocus() }),
                             onValueChange = {
                                 registerViewModel.onUdyamNumberChanged(it)
                                 registerViewModel.updateUdyamError(null)
@@ -437,7 +437,7 @@ fun UpdateProfileScreen(navController: NavHostController,fromFlow:String) {
                         addressError?.let { addressError ->
                             UpdateAddressField(
                                 address = officialAddress ?: "", addressError = addressError,
-                                addressFocus = officialAddressFocus, pincodeFocus1 = pinCodeFocus2,
+                                addressFocus = officialAddressFocus, pincodeFocus1 = pinCodeFocus1,
                                 registerViewModel = registerViewModel,
                             )
                         }
@@ -451,7 +451,7 @@ fun UpdateProfileScreen(navController: NavHostController,fromFlow:String) {
                                     registerViewModel = registerViewModel,
                                     cityError = cityError1,
                                     pinCodeError = pinCodeError1,
-                                    nextFocus = officialAddressFocus,
+                                    nextFocus = permanentAddressFocus,
                                     context = context,
                                     onValueChanged = {
                                         registerViewModel.onPinCodeChanged1(it, context)
@@ -465,7 +465,8 @@ fun UpdateProfileScreen(navController: NavHostController,fromFlow:String) {
                             UpdateAddressField2(
                                 address2 = permanentAddress ?: "", addressError = address2Error,
                                 addressFocus = permanentAddressFocus,
-                                registerViewModel = registerViewModel
+                                registerViewModel = registerViewModel,
+                                pinCodeFocus2 = pinCodeFocus2
                             )
                         }
                         cityError2?.let { cityError2 ->
@@ -609,7 +610,12 @@ fun TopSection(navController: NavHostController) {
                 painter = painterResource(id = R.drawable.back_white_icon),
                 contentDescription = stringResource(id = R.string.back_icon),
                 modifier = Modifier
-                    .clickable { navController.popBackStack(AppScreens.ApplyBycategoryScreen.route,false) }
+                    .clickable {
+                        navController.popBackStack(
+                            AppScreens.ApplyBycategoryScreen.route,
+                            false
+                        )
+                    }
                     .padding(start = 8.dp, top = 8.dp, bottom = 8.dp, end = 8.dp)
             )
         }
@@ -650,8 +656,10 @@ fun UpdateCityAndPinCodeFields(
             end = 5.dp,
             top = 10.dp,
             error = pinCodeError,
-            modifier = Modifier.weight(1f).focusRequester(pinCodeFocus),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Number),
+            modifier = Modifier
+                .weight(1f)
+                .focusRequester(pinCodeFocus),
+            keyboardOptions = KeyboardOptions(imeAction = if(id == "1") ImeAction.Next else ImeAction.Done, keyboardType = KeyboardType.Number),
             keyboardActions = KeyboardActions(onNext = { nextFocus.requestFocus() }),
             onValueChange = onValueChanged,
         )
@@ -725,15 +733,16 @@ fun UpdateAddressField(
 @Composable
 fun UpdateAddressField2(
     address2: String?, addressError: String, addressFocus: FocusRequester,
-    registerViewModel: RegisterViewModel,
+    registerViewModel: RegisterViewModel,pinCodeFocus2 : FocusRequester
 ) {
     InputField(
         inputText = address2, hint = stringResource(id = R.string.permanent_address_with_star), top = 10.dp,
         modifier = Modifier.focusRequester(addressFocus),
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Sentences,
-            imeAction = ImeAction.Done, keyboardType = KeyboardType.Text
+            imeAction = ImeAction.Next, keyboardType = KeyboardType.Text
         ),
+        keyboardActions = KeyboardActions(onNext = {  pinCodeFocus2.requestFocus() }),
         onValueChange = {
             registerViewModel.onAddressTwoChanged(it)
             registerViewModel.updateAddress2Error("")

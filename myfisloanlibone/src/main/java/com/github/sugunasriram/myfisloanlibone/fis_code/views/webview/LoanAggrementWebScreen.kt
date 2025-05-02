@@ -71,6 +71,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToEMandateESignFailedScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -99,6 +100,7 @@ fun LoanAgreementWebScreen(
     val sseEvents by sseViewModel.events.collectAsState(initial = "")
     var errorMsg by remember { mutableStateOf<String?>(null) }
     val errorTitle = stringResource(id = R.string.loan_agreement_failed)
+    val errorMessage = stringResource(id = R.string.esign_failed)
 
     sseViewModel.startListening(ApiPaths().sse)
     Log.d("transactionId: ", transactionId)
@@ -112,13 +114,13 @@ fun LoanAgreementWebScreen(
                 {
                     if (sseEvents.isEmpty()) {
                         if (!lateNavigate) {
-                            navigateToLoanDisbursementScreen(
-                                navController = navController, transactionId = transactionId,
-                                id = id, fromFlow = fromFlow
+                            navigateToEMandateESignFailedScreen(
+                                navController = navController,
+                                title = errorMessage
                             )
                         }
                     }
-                }, 3 * 60 * 1000L
+                }, 5 * 60 * 1000L
             )
         }
     }

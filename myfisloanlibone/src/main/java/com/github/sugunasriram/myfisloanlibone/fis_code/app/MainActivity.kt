@@ -16,10 +16,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateOf
-import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.AppScreens
-import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.LaunchScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.appBridge.AppBridgeManager
 import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
-import com.github.sugunasriram.myfisloanlibone.fis_code.views.auth.InAppUpdateScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.webview.personalLoan.mGeoLocationCallback
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.webview.personalLoan.mGeoLocationRequestOrigin
 
@@ -27,20 +25,17 @@ class MainActivity : ComponentActivity() {
 
 
     private val updateCompleted = mutableStateOf(false)
+    private lateinit var bridgeManager: AppBridgeManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        // 👇 Handle intent
+        bridgeManager = AppBridgeManager(this)
+
         setContent {
             FsTheme {
-
-                if (updateCompleted.value) {
-                    LaunchScreen(AppScreens.SplashScreen.route)
-                } else {
-                    InAppUpdateScreen(this) {
-                        updateCompleted.value = true // Mark update as completed
-                    }
-                }
+                bridgeManager.RenderContent(intent)
             }
         }
     }

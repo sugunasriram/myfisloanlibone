@@ -199,7 +199,7 @@ fun AnnualIncomeScreen(navController: NavHostController, fromFlow: String) {
                         .fillMaxWidth()
                         .padding(start = 30.dp, end = 30.dp)
                         .focusRequester(incomeFocus),
-                    readOnly = false
+                    readOnly = true
                 )
 
 

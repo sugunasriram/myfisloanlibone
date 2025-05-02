@@ -1150,7 +1150,6 @@ fun LoanApplicationDetails(loanDetails: OfferResponseItem,context: Context) {
     }
 }
 
-
 @Composable
 fun RepaymentBottomCommon(
     headerText: String = stringResource(id = R.string.foreclosure),
@@ -1414,7 +1413,7 @@ fun RepaymentBottomPart(
         loanDetails.fulfillments?.forEach { fulfilment ->
             fulfilment?.state?.let { state ->
                 state.descriptor?.name?.let { loanStatus ->
-                    if (!loanStatus.contains("Closed", ignoreCase = true) && loanStatus == "Loan Disbursed") {
+                    if (!loanStatus.contains("Closed", ignoreCase = true) && loanStatus.contains("Disbursed",ignoreCase = true)) {
                         CurvedPrimaryButtonMultipleInRow(
                             text = stringResource(id = R.string.repayment).uppercase(),
                             style = normal16Text400,

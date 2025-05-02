@@ -65,6 +65,7 @@ import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.app.MainActivity
 import com.github.sugunasriram.myfisloanlibone.fis_code.components.WebViewTopBar
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateTOUnexpectedErrorScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToEMandateESignFailedScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToFormRejectedScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanProcessScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiPaths
@@ -110,6 +111,7 @@ fun RepaymentWebScreen(
     var errorMsg by remember { mutableStateOf<String?>(null) }
     val errorTitle = stringResource(id = R.string.repayment_failed)
     var lateNavigate = false
+    val errorMessage = stringResource(id = R.string.emandate_failed)
 
     val context = LocalContext.current
     val activity = context as Activity
@@ -124,9 +126,8 @@ fun RepaymentWebScreen(
                 {
                     if (sseEvents.isEmpty()) {
                         if (!lateNavigate) {
-                            navigateTOUnexpectedErrorScreen(
-                                navController = navController, closeCurrent = true
-                            )
+                           navigateToEMandateESignFailedScreen(navController = navController,
+                               title = errorMessage)
                         }
                     }
                 }, 5 * 60 * 1000

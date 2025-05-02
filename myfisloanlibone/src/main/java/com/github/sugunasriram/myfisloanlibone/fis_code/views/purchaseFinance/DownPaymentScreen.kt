@@ -53,7 +53,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
 @Composable
 fun DownPaymentScreen(navController: NavHostController, fromFlow: String) {
     val amount = remember { mutableStateOf(TextFieldValue("20000")) }
-    var maxAmount = "99,000"
+    var maxAmount = "99000"
 
     FixedTopBottomScreen(
         navController,
@@ -118,7 +118,7 @@ fun ProductDetails(maxAmount: String) {
                 text = buildAnnotatedString {
                     append("Price : ")
                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                        append("₹" + maxAmount + " ")
+                        append("₹" + CommonMethods().formatWithCommas(maxAmount.toDouble().toInt()) + " ")
                     }
                     withStyle(
                         style = SpanStyle(

@@ -38,6 +38,8 @@ sealed class AppScreens(var route: String) {
     object LoanAgreementWebScreen : AppScreens("loan_agreement_web_screen")
     object AnimationLoader : AppScreens("animation_loader")
     object KycAnimation : AppScreens("kyc_animation")
+    object KycFailedScreen: AppScreens("kyc_failed_screen")
+    object EMandateESignFailedScreen: AppScreens("emandate_esign_failed_screen")
     object SelectBankScreen : AppScreens("select_bank_screen")
     object AccountAgreegatorScreen : AppScreens("account_agreegator_screen")
     object SelectAccountAgreegatorScreen : AppScreens("select_account_agreegator_screen")

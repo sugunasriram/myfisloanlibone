@@ -11,7 +11,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import com.github.sugunasriram.myfisloanlibone.BuildConfig
 import com.github.sugunasriram.myfisloanlibone.R
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.core.ApiRepository.handleAuthGetAccessTokenApi
@@ -31,7 +30,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
-//import com.github.sugunasriram.myfisloanlibone.BuildConfig.FLAVOR_NAME
 
 
 enum class DeviceType(val type: String) {
@@ -202,7 +200,6 @@ class OtpViewModel : BaseViewModel() {
         val loginDetails= LoginDetails(orderId,otp,deviceInfo)
         //Prod
 //        val loginDetails= LoginDetails(orderId,otp)
-//        val flavour = "${BuildConfig.FLAVOR_NAME}"
 
         _isLoginOtpLoading.value = true
         viewModelScope.launch(Dispatchers.IO) {

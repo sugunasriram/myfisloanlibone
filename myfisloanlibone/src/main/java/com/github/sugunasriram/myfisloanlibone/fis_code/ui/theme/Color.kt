@@ -44,6 +44,7 @@ val negativeGray = Color(0xFFA49EAC)
 val errorRed = Color(0xFFF21717)
 val errorGray = Color(0xFF716F73)
 val hyperRedColor = Color(0xFFF04949)
+val failureRed = Color(0xFFFF4A4A)
 
 
 val newBlueColor = Color(0xFF0055CB)

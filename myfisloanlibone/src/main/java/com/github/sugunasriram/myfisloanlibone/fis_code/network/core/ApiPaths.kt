@@ -1,13 +1,15 @@
 package com.github.sugunasriram.myfisloanlibone.fis_code.network.core
 
-import com.github.sugunasriram.myfisloanlibone.BuildConfig
-import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods
+import com.github.sugunasriram.myfisloanlibone.fis_code.utils.CommonMethods.Companion.BASE_URL
 import io.ktor.http.Url
 
 class ApiPaths {
 
     // Base URL Flow Api Path
     val baseUrl = "/api/v1"
+
+    //Session related Api Paths
+    val verifySession = "superAppSessions/verifySession"
 
     // Auth Flow Api Paths
     val authLogIn = "auth/login"
@@ -53,7 +55,7 @@ class ApiPaths {
     val getBanksList = "static/getBanksList"
 
     // Server side Events Api Paths
-    val sse = CommonMethods.BASE_URL+"/api/v1/sse"
+    val sse = "${BASE_URL}"+"/api/v1/sse"
     //Prod
 //    val sse = "https://ondcfs.jtechnoparks.in/jt-bap/api/v1/sse"
     //Preprod

@@ -90,6 +90,15 @@ import org.json.JSONObject
 
 object ApiRepository {
 
+    suspend fun verifySession(sessionId: String): AuthOtp? {
+        val requestBody = mapOf("id" to sessionId)
+        return KtorClient.getInstance().use { httpClient ->
+            httpClient.post(ApiPaths().verifySession) {
+                body = requestBody
+            }
+        }
+    }
+
     //Auth Flow Api Repository
     suspend fun signup(profile: Profile): Signup? {
         return KtorClient.getInstance().use { httpClient ->

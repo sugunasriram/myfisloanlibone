@@ -182,6 +182,11 @@ object LoanLib {
         val merchantIfscCode: String="",
         val merchantBankAccountHolderName: String=""
     ) :Serializable
+
+    data class SessionDetails(
+        val sessionId: String=""
+    ) :Serializable
+
     fun LaunchFISAppWithParams (
         context: Context,
         personalDetails: PersonalDetails,
@@ -209,6 +214,7 @@ object LoanLib {
         context: Context,
         personalDetails: PersonalDetails,
         productDetails: ProductDetails,
+        sessionDetails: SessionDetails ?= null,
         callback: (LoanDetails) -> Unit
     ) {
         Toast.makeText(context, "Launching FIS with Params", Toast.LENGTH_SHORT).show()
@@ -219,6 +225,7 @@ object LoanLib {
         val intent = Intent(context, MainActivity::class.java)
         intent.putExtra("personalDetails", personalDetails)
         intent.putExtra("productDetails", productDetails)
+        intent.putExtra("sessionDetails", sessionDetails)
 
         LoanLib.callback = callback
 

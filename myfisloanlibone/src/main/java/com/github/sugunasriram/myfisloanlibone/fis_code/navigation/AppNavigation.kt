@@ -77,11 +77,6 @@ fun navigateToLoanStatusScreen(navController: NavHostController, closeCurrent: B
     }
 }
 
-fun navigateToLoanListScreen(navController: NavHostController, closeCurrent: Boolean = false) {
-    shouldCloseCurrent(navController, closeCurrent)
-    navController.navigate(AppScreens.LoanListScreen.route)
-}
-
 fun navigateLoanStatusDetailScreen(
     navController: NavHostController, closeCurrent: Boolean = false
 ) {
@@ -355,6 +350,22 @@ fun navigateToAnimationLoader(
     }
 }
 
+fun navigateToKYCFailedScreen(
+    navController: NavHostController,
+) {
+    navController.navigate(AppScreens.KycFailedScreen.route) {
+        shouldCloseCurrent(navController, true)
+    }
+}
+
+fun navigateToEMandateESignFailedScreen(
+    navController: NavHostController, title : String
+) {
+    val destinationUri = "${AppScreens.EMandateESignFailedScreen.route}/$title"
+    navController.navigate(destinationUri) {
+        shouldCloseCurrent(navController, true)
+    }
+}
 
 fun navigateToKycAnimation(
     navController: NavHostController, transactionId: String, offerId: String, responseItem: String,

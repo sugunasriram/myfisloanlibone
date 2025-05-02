@@ -48,6 +48,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToFor
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToGstInvoiceLoanScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToLoanOffersScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToUpdateProfileScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.navigation.navigateToWebViewFlowOneScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.auth.ProfileResponse
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.personaLoan.Offer
 import com.github.sugunasriram.myfisloanlibone.fis_code.network.model.gst.GstSearchData
@@ -205,7 +206,7 @@ fun SelectingFlow(
                                 userDetails?.data?.city1,
                                 userDetails?.data?.pincode1,
                             )
-                            if (requiredFields.any { it.isNullOrEmpty() }) {
+                            if (requiredFields.any { it.isNullOrEmpty() } && !userDetailsAPILoading) {
                                 navigateToUpdateProfileScreen(navController,fromFlow = loanType)
                                 CommonMethods().toastMessage(
                                     context,
@@ -275,7 +276,7 @@ fun SelectingFlow(
                                 userDetails?.data?.city1,
                                 userDetails?.data?.pincode1,
                             )
-                            if (requiredFields.any { it.isNullOrEmpty() }) {
+                            if (requiredFields.any { it.isNullOrEmpty() }  && !userDetailsAPILoading) {
                                 navigateToUpdateProfileScreen(navController,fromFlow = loanType)
                                 CommonMethods().toastMessage(
                                     context,
@@ -309,27 +310,27 @@ fun LoanSelectionScreen(
             top = 25.dp, textColor = appDarkTeal, style = bold36Text700
         )
 
-//        CurvedPrimaryButtonFull(
-//            text = stringResource(id = R.string.gst_invoice_loan),
-//            modifier = Modifier.padding(horizontal = 30.dp, vertical = 40.dp)
-//        ) {
-//            onLoanSelected("Invoice Loan")
-//        }
+        CurvedPrimaryButtonFull(
+            text = stringResource(id = R.string.gst_invoice_loan),
+            modifier = Modifier.padding(horizontal = 30.dp, vertical = 20.dp)
+        ) {
+            onLoanSelected("Invoice Loan")
+        }
 
 //        Spacer(modifier = Modifier.height(48.dp))
         CurvedPrimaryButtonFull(
             text = stringResource(id = R.string.personal_loan),
-            modifier = Modifier.padding(horizontal = 30.dp, vertical = 40.dp)
+            modifier = Modifier.padding(horizontal = 30.dp, vertical = 20.dp)
         ) {
             onLoanSelected("Personal Loan")
         }
 
-//        CurvedPrimaryButtonFull(
-//            text = stringResource(id = R.string.purchase_finance),
-//            modifier = Modifier.padding(start = 30.dp, end = 30.dp, top = 20.dp, bottom = 20.dp)
-//        ) {
-//            onLoanSelected("Purchase Finance")
-//        }
+        CurvedPrimaryButtonFull(
+            text = stringResource(id = R.string.purchase_finance),
+            modifier = Modifier.padding(start = 30.dp, end = 30.dp, top = 20.dp, bottom = 20.dp)
+        ) {
+            onLoanSelected("Purchase Finance")
+        }
     }
 }
 
@@ -599,10 +600,13 @@ fun PersonalDecidedFlow(status: UserStatus?, navController: NavHostController, f
 
                     status.data.id?.let { searchId ->
                         transactionId?.let {
-                            SearchWebView(
-                                navController = navController, urlToOpen = webUrl,
-                                searchId = searchId, transactionId = it, fromFlow = fromFlow,
-                                pageContent = {}
+                            navigateToWebViewFlowOneScreen(
+                                navController = navController,
+                                purpose = stringResource(R.string.getUerFlow),
+                                fromFlow = fromFlow,
+                                id = searchId,
+                                transactionId = transactionId,
+                                url = webUrl
                             )
                         }
                     }
@@ -760,11 +764,19 @@ fun InvoiceDecidedFlow(status: UserStatus?, navController: NavHostController, fr
 
                     status.data.id?.let { searchId ->
                         transactionId?.let {
-                            SearchWebView(
-                                navController = navController, urlToOpen = webUrl,
-                                searchId = searchId, transactionId = it, fromFlow = fromFlow,
-                                pageContent = {}
+                            navigateToWebViewFlowOneScreen(
+                                navController = navController,
+                                purpose = stringResource(R.string.getUerFlow),
+                                fromFlow = fromFlow,
+                                id = searchId,
+                                transactionId = transactionId,
+                                url = webUrl
                             )
+//                            SearchWebView(
+//                                navController = navController, urlToOpen = webUrl,
+//                                searchId = searchId, transactionId = it, fromFlow = fromFlow,
+//                                pageContent = {}
+//                            )
                         }
                     }
 
@@ -976,10 +988,13 @@ fun PurchaseDecidedFlow(status: UserStatus?, navController: NavHostController, f
 
                     status.data.id?.let { searchId ->
                         transactionId?.let {
-                            SearchWebView(
-                                navController = navController, urlToOpen = webUrl,
-                                searchId = searchId, transactionId = it, fromFlow = fromFlow,
-                                pageContent = {}
+                            navigateToWebViewFlowOneScreen(
+                                navController = navController,
+                                purpose = stringResource(R.string.getUerFlow),
+                                fromFlow = fromFlow,
+                                id = searchId,
+                                transactionId = transactionId,
+                                url = webUrl
                             )
                         }
                     }

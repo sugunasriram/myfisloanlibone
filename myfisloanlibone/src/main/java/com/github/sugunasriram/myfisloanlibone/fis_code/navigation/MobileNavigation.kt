@@ -38,6 +38,8 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.views.igm.IssueDetailScr
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.igm.IssueListScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.invalid.FormRejectionScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.invalid.UnexpectedErrorScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.views.negitiveScreen.EMandateESignFailedScreen
+import com.github.sugunasriram.myfisloanlibone.fis_code.views.negitiveScreen.KYCFailedScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.AccountAgreegatorScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.AddBankDetailScreen
 import com.github.sugunasriram.myfisloanlibone.fis_code.views.personalLoan.AnnualIncomeScreen
@@ -309,6 +311,17 @@ fun NavGraphBuilder.mobileNavigation(
                 KycAnimation(
                     navController = navController, transactionId = transactionId, offerId = offerID, responseItem = responseItem, fromFlow = fromFlow
                 )
+            }
+        }
+
+        composable(AppScreens.KycFailedScreen.route) { backStack ->
+                KYCFailedScreen(navController = navController)
+        }
+
+        composable("${AppScreens.EMandateESignFailedScreen.route}/{title}") { backStack ->
+            val title = backStack.arguments?.getString("title")
+            title?.let {
+                EMandateESignFailedScreen(navController = navController, title = title)
             }
         }
 

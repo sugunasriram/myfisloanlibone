@@ -222,6 +222,13 @@ val semibold14Text500 = TextStyle(
     letterSpacing = 0.14.sp,
 )
 
+val normalSerif32Text500 = TextStyle(
+    fontSize = 32.sp,
+    lineHeight = 21.sp,
+    fontFamily = FontFamily(Font(R.font.roboto_serif_regular)),
+    fontWeight = FontWeight(500),
+)
+
 
 val semibold32Text500 = TextStyle(
     fontSize = 32.sp,
