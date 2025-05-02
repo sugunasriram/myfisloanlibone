@@ -65,22 +65,33 @@ class AppBridgeManager(private val activity: ComponentActivity) {
             unAuthorizedUser -> CommonMethods().ShowUnAuthorizedErrorScreen(navController= rememberNavController())
             else -> {
                 sessionDetails?.sessionId?.let { sessionId ->
+                    Log.d("fisloanone", "Session ID: $sessionId")
                     if (!verifySessionDone) {
                         verifySessionDone = true
+                        Log.d("fisloanone", "verifySession API : $sessionId")
+
                         viewModel.verifySessionApi(sessionId, context)
                     }
 
                     if (isVerifySessionChecking && isVerifySessionSuccess) {
+                        Log.d("fisloanone", "Launching FIS Category Screen")
+
                         LaunchScreen(AppScreens.ApplyBycategoryScreen.route)
                     } else {
                         // Optionally show loading screen or nothing while waiting
                     }
                 } ?: run {
                     if (updateCompleted.value) {
+                        Log.d("fisloanone", "No Session ID found")
+
                         if (!verifySessionDone) {
+                            Log.d("fisloanone", "Launch Splash screen")
+
                             LaunchScreen(AppScreens.SplashScreen.route)
                         }
                     } else {
+                        Log.d("fisloanone", "InAppUpdateScreen")
+
                         InAppUpdateScreen(activity) {
                             updateCompleted.value = true
                         }
