@@ -78,7 +78,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.sugunasriram"
                 artifactId = "myfisloanlibone"
-                version = "1.0.17"
+                version = "1.0.18"
             }
         }
     }
