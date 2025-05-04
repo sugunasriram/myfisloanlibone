@@ -4,6 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Button
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,6 +36,7 @@ import com.github.sugunasriram.myfisloanlibone.fis_code.views.documents.PrivacyP
 class AppBridgeManager(private val activity: ComponentActivity) {
 
     var updateCompleted = mutableStateOf(false)
+    var showDialog = mutableStateOf(true)
     var verifySessionDone = false
     private val context: Context = activity.applicationContext
 
@@ -56,6 +61,26 @@ class AppBridgeManager(private val activity: ComponentActivity) {
         personalDetails?.let { Log.d("AppBridge", "Received personalDetails: $it") }
         productDetails?.let { Log.d("AppBridge", "Received productDetails: $it") }
         sessionDetails?.let { Log.d("AppBridge", "Received sessionDetails: $it") }
+
+        if (showDialog.value) {
+
+            AlertDialog(
+                onDismissRequest = { showDialog.value = false },
+                title = { Text("Details") },
+                text = {
+                    Column {
+                        Text("Session Details: $sessionDetails")
+                        Text("Personal Details: $personalDetails")
+                        Text("Product Details: $productDetails")
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = { showDialog.value = false }) {
+                        Text("OK")
+                    }
+                }
+            )
+        }
 
         when {
             showInternetScreen -> CommonMethods().ShowInternetErrorScreen(navController= rememberNavController())
